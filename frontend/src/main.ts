@@ -62,13 +62,10 @@ let diagnosePlantId: number | null = null;
 let diagnoseStep: DiagnoseStep = { name: 'idle' };
 let diagnosePickerOpen = false;
 
-async function refresh(): Promise<void> {
-  const [rooms, plants] = await Promise.all([fetchRooms(), fetchPlants()]);
-  currentRooms = rooms;
-  currentPlants = plants;
+function renderCurrentView(): void {
   renderApp(appRoot, {
-    rooms,
-    plants,
+    rooms: currentRooms,
+    plants: currentPlants,
     now: new Date(),
     onWaterPlant: handleWaterPlant,
     onWaterRoom: handleWaterRoom,
@@ -91,6 +88,13 @@ async function refresh(): Promise<void> {
   } else {
     document.body.classList.remove('detail-expanded');
   }
+}
+
+async function refresh(): Promise<void> {
+  const [rooms, plants] = await Promise.all([fetchRooms(), fetchPlants()]);
+  currentRooms = rooms;
+  currentPlants = plants;
+  renderCurrentView();
   updateMoveRoomModal();
   updateNicknameModal();
   updateRoomRenameModal();
@@ -298,6 +302,7 @@ async function handleUndo(token: string): Promise<void> {
 
 function handleToggleDetail(plantId: number): void {
   expandedPlantId = expandedPlantId === plantId ? null : plantId;
+  renderCurrentView();
 }
 
 /**
@@ -416,6 +421,7 @@ async function handleRemoveRoom(roomId: number): Promise<void> {
 
 function handleToggleRoomDetail(roomId: number): void {
   expandedRoomId = expandedRoomId === roomId ? null : roomId;
+  renderCurrentView();
 }
 
 /**
