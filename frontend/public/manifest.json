@@ -1,0 +1,15 @@
+{
+  "name": "Droplet",
+  "short_name": "Droplet",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8f7",
+  "theme_color": "#1f9d6f",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

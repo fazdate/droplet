@@ -1,0 +1,25 @@
+services:
+  droplet:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: droplet:local
+    restart: unless-stopped
+    ports:
+      # LAN-only; do not port-forward this on the router.
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - droplet-data:/app/data
+      # Bind-mounted (not a named volume) so backup archives land directly on
+      # the host filesystem, ready for any backup or offsite-sync job.
+      - ./backups:/backups/droplet
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  droplet-data:

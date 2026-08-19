@@ -1,0 +1,36 @@
+## Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+## Env / secrets
+.env
+*.local.env
+
+## Local-only docs (personal deployment specifics, never pushed)
+AGENTS.local.md
+TODO.md
+
+## Generated backups
+backups/
+
+## Data (sqlite db + uploaded photos are runtime state, not source)
+backend/data/*.sqlite3*
+backend/data/photos/*
+!backend/data/photos/.gitkeep
+backend/static/
+
+## Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+## OS
+.DS_Store

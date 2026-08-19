@@ -1,0 +1,1046 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, sans-serif;
+
+  /* Brand */
+  --color-brand: #1f9d6f;
+  --color-brand-dark: #167a56;
+  --color-brand-contrast: #ffffff;
+
+  /* Semantic */
+  --color-danger: #d64550;
+  --color-danger-dark: #b6353f;
+  --color-warning: #d97b1f;
+
+  /* Surfaces (light) */
+  --color-bg: #f6f8f7;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef2f0;
+  --color-border: #dde3e0;
+  --color-text: #1a2422;
+  --color-text-muted: #667169;
+  --color-overlay: rgba(15, 25, 20, 0.55);
+
+  /* Spacing scale */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2.5rem;
+
+  /* Radius scale */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Type scale */
+  --font-size-caption: 0.8rem;
+  --font-size-body: 0.95rem;
+  --font-size-subhead: 1rem;
+  --font-size-heading: 1.15rem;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(20, 30, 25, 0.08);
+  --shadow-md: 0 4px 16px rgba(20, 30, 25, 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-brand: #34c98a;
+    --color-brand-dark: #24a06d;
+    --color-brand-contrast: #06231a;
+    --color-danger: #ff6b74;
+    --color-danger-dark: #e14e58;
+    --color-warning: #e8a252;
+    --color-bg: #101513;
+    --color-surface: #1a201d;
+    --color-surface-muted: #232b27;
+    --color-border: #333d38;
+    --color-text: #ecf3ef;
+    --color-text-muted: #9aa6a0;
+    --color-overlay: rgba(0, 0, 0, 0.65);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+}
+
+body {
+  margin: 0;
+  padding: var(--space-4);
+  padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
+  max-width: 640px;
+  margin-inline: auto;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+  line-height: 1.4;
+}
+
+#app {
+  min-width: 0;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.page-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.page-summary-label {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+}
+
+.page-summary-value {
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+/*
+ * Base element styles: every button/input/select/textarea in the app gets a
+ * consistent baseline (size, radius, colors, tap target, focus ring) via a
+ * bare-element selector so it stays lower-specificity than the named variant
+ * classes below (e.g. .water-button, .remove-button) — those only need to
+ * override color/border, not re-declare padding/radius/font-size every time.
+ */
+button {
+  font: inherit;
+  font-size: var(--font-size-body);
+  padding: 0.6rem 1.1rem;
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.05s ease,
+    opacity 0.15s ease;
+}
+
+button:where(:hover) {
+  background: var(--color-surface-muted);
+}
+
+button:where(:active) {
+  transform: scale(0.97);
+}
+
+button:where(:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  font-size: var(--font-size-body);
+  padding: 0.55rem 0.75rem;
+  min-height: 44px;
+  box-sizing: border-box;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.room {
+  margin-bottom: var(--space-5);
+}
+
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+  font-size: var(--font-size-heading);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.room-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-header button {
+  flex-shrink: 0;
+}
+
+.plant-tile {
+  display: grid;
+  grid-template-columns: 64px 1fr auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+}
+
+.plant-detail {
+  grid-column: 1 / -1;
+  min-width: 0;
+  animation: fade-in 0.18s ease;
+}
+
+.plant-tile img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.plant-tile.overdue {
+  box-shadow: var(--shadow-sm), inset 3px 0 0 var(--color-danger);
+}
+
+.plant-tile.overdue .due-label {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.plant-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.plant-name {
+  margin: 0;
+  font-size: var(--font-size-subhead);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.due-label {
+  font-size: var(--font-size-caption);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.water-button,
+.room-header button {
+  font-size: var(--font-size-body);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: var(--color-brand);
+  color: var(--color-brand-contrast);
+  cursor: pointer;
+}
+
+.water-button:hover,
+.room-header button:hover,
+.add-plant-button:hover,
+.add-plant-modal button:not(.modal-close):hover {
+  background: var(--color-brand-dark);
+}
+
+.detail-toggle {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.2rem;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.detail-toggle:hover {
+  background: var(--color-surface-muted);
+}
+
+.remove-room-button {
+  background: transparent;
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.room-header .remove-room-button {
+  background: transparent;
+  color: var(--color-danger);
+}
+
+.remove-room-button:hover,
+.remove-button:hover {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+
+.cadence-editor {
+  padding: var(--space-3);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-2);
+}
+
+.cadence-stepper-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.stepper-minus,
+.stepper-plus {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.cadence-value {
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+}
+
+.reset-button {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-caption);
+  padding: 0.4rem 0.8rem;
+  min-height: 40px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+}
+
+.cadence-source {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+}
+
+.care-info {
+  padding: var(--space-3);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-2);
+}
+
+.care-info-heading {
+  margin: 0 0 0.4rem;
+  font-size: var(--font-size-subhead);
+}
+
+.care-info-row {
+  margin: 0.25rem 0;
+  font-size: var(--font-size-subhead);
+}
+
+.care-info-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+}
+
+.remove-button {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-subhead);
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-danger);
+  background: transparent;
+  color: var(--color-danger);
+  cursor: pointer;
+}
+
+.room-detail {
+  padding: var(--space-2) 0 var(--space-3);
+  animation: fade-in 0.18s ease;
+}
+
+.rename-room-button,
+.rename-nickname-button {
+  font-size: 0.9rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.plant-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.change-photo-button {
+  font-size: var(--font-size-subhead);
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.room-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.room-picker-option {
+  font-size: var(--font-size-subhead);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.room-picker-option:hover {
+  background: var(--color-surface-muted);
+}
+
+.move-room-button {
+  font-size: var(--font-size-subhead);
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.rename-room-button:hover,
+.rename-nickname-button:hover,
+.change-photo-button:hover,
+.move-room-button:hover,
+.modal-close:hover {
+  background: var(--color-surface-muted);
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--color-text-muted);
+  margin-top: var(--space-6);
+  animation: fade-in 0.25s ease;
+}
+
+.empty-state-icon {
+  width: 56px;
+  height: 56px;
+  color: var(--color-brand);
+  opacity: 0.6;
+  margin-bottom: var(--space-2);
+}
+
+#toast-root {
+  position: fixed;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--color-text);
+  color: var(--color-bg);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  animation: toast-in 0.2s ease;
+}
+
+.undo-button {
+  background: transparent;
+  border: none;
+  color: var(--color-brand);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-plant-button {
+  position: fixed;
+  bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  right: 1.5rem;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1.8rem;
+  line-height: 1;
+  background: var(--color-brand);
+  color: var(--color-brand-contrast);
+  border: none;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+body.detail-expanded .add-plant-button {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.add-plant-button-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.add-plant-button-symbol svg {
+  display: block;
+}
+
+#add-choice-modal-root,
+#add-modal-root,
+#nickname-modal-root,
+#room-rename-modal-root,
+#move-room-modal-root,
+#diagnose-picker-modal-root,
+#diagnose-modal-root {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  opacity: 1;
+  transition: opacity 0.18s ease;
+}
+
+#add-choice-modal-root.hidden,
+#add-modal-root.hidden,
+#nickname-modal-root.hidden,
+#room-rename-modal-root.hidden,
+#move-room-modal-root.hidden,
+#diagnose-picker-modal-root.hidden,
+#diagnose-modal-root.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    visibility 0s linear 0.18s;
+}
+
+.add-plant-modal {
+  position: relative;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  padding-top: calc(var(--space-5) + 1.75rem);
+  max-width: 420px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-md);
+  animation: modal-in 0.2s ease;
+}
+
+.add-choice-modal button {
+  display: block;
+  width: 100%;
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.add-plant-modal p {
+  margin: 0 0 var(--space-3);
+}
+
+.add-plant-modal img {
+  max-width: 100%;
+  border-radius: var(--radius-md);
+  margin: var(--space-2) 0;
+}
+
+.add-plant-modal button {
+  margin: 0.25rem 0.25rem 0.25rem 0;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: var(--color-brand);
+  color: var(--color-brand-contrast);
+  cursor: pointer;
+}
+
+.text-prompt-form input,
+.room-rename-input {
+  width: 100%;
+}
+
+.add-plant-modal .modal-close {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.add-plant-modal .modal-close:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+}
+
+.button-row button {
+  flex: 1;
+  min-width: 6rem;
+  margin: 0;
+}
+
+.add-plant-modal .candidate-no,
+.add-plant-modal .nickname-no {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.other-candidates {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.other-candidates li {
+  margin: 0;
+}
+
+.add-plant-modal .other-candidate {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: left;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+}
+
+.add-plant-modal img.other-candidate-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.error-message {
+  color: var(--color-danger);
+}
+
+.identifying-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 4px solid color-mix(in srgb, var(--color-brand) 20%, transparent);
+  border-top-color: var(--color-brand);
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.diagnose-issue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.diagnose-issue {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+}
+
+.diagnose-issue-title {
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.diagnose-issue-suggestion {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .empty-state,
+  .plant-detail,
+  .room-detail,
+  .toast,
+  .add-plant-modal {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+.search-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  list-style: none;
+}
+
+.manual-search-button.is-searching {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.manual-name-input {
+  width: 100%;
+  margin-bottom: var(--space-2);
+}
+
+.add-plant-modal .manual-search-button {
+  background: transparent;
+  border: 1px solid var(--color-brand);
+  color: var(--color-brand);
+}
+
+.search-results {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.search-results li {
+  margin: 0;
+}
+
+.add-plant-modal .search-result-button {
+  width: 100%;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  text-align: left;
+  margin: 0;
+}
+
+.search-no-results {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+}
+
+.manual-divider {
+  margin: var(--space-4) 0 var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+}
+
+.manual-species-form,
+.nickname-form,
+.room-picker-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.manual-days-input {
+  width: 100%;
+  accent-color: var(--color-brand);
+  min-height: auto;
+  padding: 0.5rem 0;
+  border: none;
+  background: transparent;
+}
+
+.interval-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.interval-shortcuts button {
+  flex: 1;
+  min-width: 5rem;
+  font-size: var(--font-size-caption);
+  padding: 0.4rem 0.7rem;
+  min-height: 40px;
+  margin: 0;
+}
+
+.add-plant-modal .interval-shortcuts button {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.add-plant-modal .room-picker-option {
+  display: block;
+  width: 100%;
+  margin: 0 0 var(--space-2);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  text-align: left;
+}
+
+.add-plant-modal .room-picker-option:hover {
+  background: var(--color-surface-muted);
+}
+
+.nickname-input,
+.new-room-input {
+  width: 100%;
+}
+
+.room-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, currentColor 50%) calc(100% - 1.05rem) 50% / 0.4rem 0.4rem no-repeat,
+    linear-gradient(135deg, currentColor 50%, transparent 50%) calc(100% - 0.8rem) 50% / 0.4rem 0.4rem no-repeat,
+    var(--color-surface);
+  padding-right: 2.4rem;
+}
+
+.room-picker-empty-note {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+  padding-right: 2.5rem;
+  margin-top: 0;
+}
+
+.nickname-editor-input {
+  width: 100%;
+}
+
+.nickname-editor-cancel {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.add-plant-modal button.nickname-editor-cancel:hover {
+  background: var(--color-surface-muted);
+}
+
+.nickname-editor-submit {
+  background: var(--color-brand);
+  color: var(--color-brand-contrast);
+}
+
+.nickname-editor-submit:hover {
+  background: var(--color-brand-dark);
+}
+
+/*
+ * Small-phone tightening (older/smaller devices, ~320-380px wide): the
+ * default spacing scale eats too much of the available width, so pull back
+ * padding/gaps and shrink the plant photo without changing the layout
+ * structure itself.
+ */
+@media (max-width: 380px) {
+  body {
+    padding: var(--space-3);
+    padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .plant-tile {
+    grid-template-columns: 48px 1fr auto auto;
+    padding: var(--space-2);
+    gap: var(--space-2);
+  }
+
+  .plant-tile img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .water-button {
+    padding: 0.55rem 0.8rem;
+    font-size: var(--font-size-caption);
+  }
+
+  .add-plant-modal {
+    padding: var(--space-4);
+    padding-top: calc(var(--space-4) + 1.75rem);
+    width: 94%;
+  }
+
+  .add-plant-button {
+    right: 1rem;
+    width: 52px;
+    height: 52px;
+  }
+}
+
+@media (min-width: 960px) {
+  body {
+    max-width: none;
+    margin-inline: 0;
+    padding: clamp(1.25rem, 2vw, 2rem);
+    padding-bottom: calc(clamp(1.25rem, 2vw, 2rem) + env(safe-area-inset-bottom, 0px));
+  }
+
+  #app {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+  }
+
+  .room {
+    margin-bottom: 0;
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .room-header {
+    padding-top: 0;
+  }
+
+  .room-title {
+    white-space: normal;
+  }
+
+  .room-header button {
+    padding: 0.55rem 0.9rem;
+    font-size: var(--font-size-caption);
+  }
+}
