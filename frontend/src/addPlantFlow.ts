@@ -22,7 +22,7 @@ type Step =
   | { name: 'manual'; photoId: string }
   | { name: 'nickname-prompt'; photoId: string; species_id: number; defaultName: string }
   | { name: 'room-picker'; photoId: string; species_id: number; nickname?: string }
-  | { name: 'error'; message: string };
+  | { name: 'error'; message: string; photoId?: string };
 
 /**
  * Orchestrates the add-a-plant flow (plan section 4.4): photo -> AI candidates
@@ -61,8 +61,10 @@ export class AddPlantFlow {
       } else {
         this.setStep({ name: 'candidates', photoId: result.photo_id, candidates: result.candidates });
       }
-    } catch {
-      this.setStep({ name: 'error', message: t('error.identify') });
+    } catch (error) {
+      // Show error state with photoId empty, allowing user to see what happened
+      // and choose to retry or proceed with manual entry.
+      this.setStep({ name: 'error', message: t('error.identify'), photoId: '' });
     }
   }
 
@@ -94,7 +96,7 @@ export class AddPlantFlow {
       const { species_id } = await this.deps.createManualSpecies(name, intervalDays);
       this.setStep({ name: 'nickname-prompt', photoId, species_id, defaultName: name });
     } catch {
-      this.setStep({ name: 'error', message: t('error.saveManual') });
+      this.setStep({ name: 'error', message: t('error.saveManual'), photoId });
     }
   }
 
@@ -128,8 +130,25 @@ export class AddPlantFlow {
       this.setStep({ name: 'idle' });
       this.onPlantCreated(plant);
     } catch {
-      this.setStep({ name: 'error', message: t('error.createPlant') });
+      this.setStep({ name: 'error', message: t('error.createPlant'), photoId });
     }
+  }
+
+  /** Recover from an error state by going back to manual mode (if photoId is available) or canceling. */
+  retryFromError(): void {
+    if (this.step.name !== 'error') return;
+    const photoId = this.step.photoId;
+    if (photoId) {
+      this.setStep({ name: 'manual', photoId });
+    } else {
+      this.cancel();
+    }
+  }
+
+  /** Go to manual entry mode when identification fails and no photo ID is available. */
+  goToManualFromError(): void {
+    if (this.step.name !== 'error') return;
+    this.setStep({ name: 'manual', photoId: '' });
   }
 
   cancel(): void {

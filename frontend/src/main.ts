@@ -282,22 +282,37 @@ document.body.appendChild(diagnoseCaptureInput);
 
 
 async function handleWaterPlant(plantId: number): Promise<void> {
-  const result = await waterPlant(plantId);
-  await refresh();
-  showUndoToast(toastRoot, t('toast.watered'), () => handleUndo(result.undo_token));
+  try {
+    const result = await waterPlant(plantId);
+    await refresh();
+    showUndoToast(toastRoot, t('toast.watered'), () => handleUndo(result.undo_token));
+  } catch (err) {
+    console.error('Failed to water plant', err);
+    window.alert(t('error.waterPlant'));
+  }
 }
 
 async function handleWaterRoom(roomId: number): Promise<void> {
-  const result = await waterRoom(roomId);
-  await refresh();
-  showUndoToast(toastRoot, t('toast.wateredPlants', { count: result.plant_ids.length }), () =>
-    handleUndo(result.undo_token),
-  );
+  try {
+    const result = await waterRoom(roomId);
+    await refresh();
+    showUndoToast(toastRoot, t('toast.wateredPlants', { count: result.plant_ids.length }), () =>
+      handleUndo(result.undo_token),
+    );
+  } catch (err) {
+    console.error('Failed to water room', err);
+    window.alert(t('error.waterRoom'));
+  }
 }
 
 async function handleUndo(token: string): Promise<void> {
-  await undoWatering(token);
-  await refresh();
+  try {
+    await undoWatering(token);
+    await refresh();
+  } catch (err) {
+    console.error('Failed to undo watering', err);
+    window.alert(t('error.undo'));
+  }
 }
 
 function handleToggleDetail(plantId: number): void {
@@ -312,15 +327,25 @@ function handleToggleDetail(plantId: number): void {
  * confirmation used for the other "did this actually happen?" actions above.
  */
 async function handleSetIntervalDays(plantId: number, days: number): Promise<void> {
-  await updatePlantInterval(plantId, days);
-  await refresh();
-  showToast(toastRoot, t('toast.intervalUpdated', { days }));
+  try {
+    await updatePlantInterval(plantId, days);
+    await refresh();
+    showToast(toastRoot, t('toast.intervalUpdated', { days }));
+  } catch (err) {
+    console.error('Failed to update interval', err);
+    window.alert(t('error.setInterval'));
+  }
 }
 
 async function handleResetInterval(plantId: number): Promise<void> {
-  await resetPlantInterval(plantId);
-  await refresh();
-  showToast(toastRoot, t('toast.intervalReset'));
+  try {
+    await resetPlantInterval(plantId);
+    await refresh();
+    showToast(toastRoot, t('toast.intervalReset'));
+  } catch (err) {
+    console.error('Failed to reset interval', err);
+    window.alert(t('error.resetInterval'));
+  }
 }
 
 async function handleChangePhoto(plantId: number, file: File): Promise<void> {
@@ -493,6 +518,8 @@ const addPlantFlow = new AddPlantFlow(
       onSkipNickname: () => addPlantFlow.skipNickname(),
       onSetNickname: (nickname) => addPlantFlow.setNickname(nickname),
       onRoomSubmit: (choice) => addPlantFlow.submitRoomAndCreate(choice),
+      onRetry: () => addPlantFlow.retryFromError(),
+      onUseManual: () => addPlantFlow.goToManualFromError(),
       onCancel: () => addPlantFlow.cancel(),
     });
   },

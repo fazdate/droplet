@@ -8,7 +8,7 @@ export type AddPlantStep =
   | { name: 'manual'; photoId: string }
   | { name: 'nickname-prompt'; photoId: string; species_id: number; defaultName: string }
   | { name: 'room-picker'; photoId: string; species_id: number; nickname?: string }
-  | { name: 'error'; message: string };
+  | { name: 'error'; message: string; photoId?: string };
 
 export interface AddPlantModalHandlers {
   rooms: RoomSummary[];
@@ -20,6 +20,8 @@ export interface AddPlantModalHandlers {
   onSkipNickname: () => void;
   onSetNickname: (nickname: string) => void;
   onRoomSubmit: (choice: { roomId: number } | { newRoomName: string }) => void;
+  onRetry: () => void;
+  onUseManual: () => void;
   onCancel: () => void;
 }
 
@@ -337,10 +339,42 @@ export function renderAddPlantModal(container: HTMLElement, step: AddPlantStep, 
   } else if (step.name === 'room-picker') {
     modal.appendChild(renderRoomPickerStep(handlers));
   } else if (step.name === 'error') {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'error-step';
+
     const p = document.createElement('p');
     p.className = 'error-message';
     p.textContent = step.message;
-    modal.appendChild(p);
+    wrapper.appendChild(p);
+
+    const buttonRow = document.createElement('div');
+    buttonRow.className = 'button-row';
+
+    if (step.photoId) {
+      const retryButton = document.createElement('button');
+      retryButton.type = 'button';
+      retryButton.className = 'error-retry-button';
+      retryButton.textContent = t('action.tryAgain');
+      retryButton.addEventListener('click', handlers.onRetry);
+      buttonRow.appendChild(retryButton);
+    } else {
+      const manualButton = document.createElement('button');
+      manualButton.type = 'button';
+      manualButton.className = 'error-manual-button';
+      manualButton.textContent = t('action.addManually');
+      manualButton.addEventListener('click', handlers.onUseManual);
+      buttonRow.appendChild(manualButton);
+    }
+
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'error-cancel-button';
+    cancelButton.textContent = t('action.cancel');
+    cancelButton.addEventListener('click', handlers.onCancel);
+    buttonRow.appendChild(cancelButton);
+
+    wrapper.appendChild(buttonRow);
+    modal.appendChild(wrapper);
   }
 
   container.appendChild(modal);

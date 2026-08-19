@@ -33,6 +33,8 @@ const en: Dict = {
   'action.increaseInterval': 'Water more often',
   'action.diagnose': 'Diagnose plant issue',
   'action.quickActions': 'Quick actions',
+  'action.tryAgain': 'Try again',
+  'action.addManually': 'Add manually',
 
   'due.notScheduled': 'not scheduled',
   'due.today': 'Water today',
@@ -68,6 +70,11 @@ const en: Dict = {
     'The camera closed the app in the background to free up memory, so the photo was lost. Please try again.',
   'error.diagnose': 'Could not diagnose this photo. Please try again.',
   'error.diagnoseUnavailable': 'Diagnosis is temporarily unavailable. Please try again later.',
+  'error.waterPlant': 'Could not water this plant. Please try again.',
+  'error.waterRoom': 'Could not water the plants in this room. Please try again.',
+  'error.undo': 'Could not undo the watering. Please try again.',
+  'error.setInterval': 'Could not update the watering interval. Please try again.',
+  'error.resetInterval': 'Could not reset the watering interval. Please try again.',
 
   'empty.noPlants': 'No plants yet — tap + to add your first one.',
   'summary.attentionOne': '1 plant needs attention',
@@ -150,6 +157,8 @@ const hu: Dict = {
   'action.increaseInterval': 'Gyakrabban locsolva',
   'action.diagnose': 'Növény problémáinak diagnosztizálása',
   'action.quickActions': 'Gyors műveletek',
+  'action.tryAgain': 'Újra próbálkozás',
+  'action.addManually': 'Manuális hozzáadás',
 
   'due.notScheduled': 'nincs ütemezve',
   'due.today': 'Ma locsolni kell',
@@ -185,6 +194,11 @@ const hu: Dict = {
     'A böngésző a háttérben bezárta az appot, hogy memóriát szabadítson fel, ezért a fotó elveszett. Próbáld újra.',
   'error.diagnose': 'Nem sikerült elemezni a fotót. Próbáld újra.',
   'error.diagnoseUnavailable': 'A diagnosztika átmenetileg nem elérhető. Próbáld újra később.',
+  'error.waterPlant': 'Nem sikerült megöntözni a növényt. Próbáld újra.',
+  'error.waterRoom': 'Nem sikerült a szoba növényeit megöntözni. Próbáld újra.',
+  'error.undo': 'Nem sikerült visszavonni a locsolást. Próbáld újra.',
+  'error.setInterval': 'Nem sikerült frissíteni a locsolás gyakoriságát. Próbáld újra.',
+  'error.resetInterval': 'Nem sikerült visszaállítani a locsolás gyakoriságát. Próbáld újra.',
 
   'empty.noPlants': 'Még nincs növényed — koppints a + gombra az elsőhöz.',
   'summary.attentionOne': '1 növény figyelmet igényel',

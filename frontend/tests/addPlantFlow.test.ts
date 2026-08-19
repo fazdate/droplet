@@ -54,14 +54,18 @@ describe('AddPlantFlow', () => {
     expect(render).toHaveBeenLastCalledWith({ name: 'manual', photoId: 'p1.jpg' });
   });
 
-  it('should_go_to_error_step_when_identify_fails', async () => {
+  it('should_show_error_when_identify_fails', async () => {
     const deps = makeDeps({ identifyPhoto: vi.fn().mockRejectedValue(new Error('network down')) });
     const render = vi.fn();
     const flow = new AddPlantFlow(deps, render, vi.fn());
 
     await flow.submitPhoto(new File(['x'], 'p.jpg'));
 
-    expect(flow.getStep().name).toBe('error');
+    expect(flow.getStep()).toEqual({
+      name: 'error',
+      message: 'Could not identify this photo. Try again or enter it manually.',
+      photoId: '',
+    });
   });
 
   it('should_move_to_manual_step_when_all_candidates_rejected', async () => {
