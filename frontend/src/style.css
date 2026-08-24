@@ -222,6 +222,19 @@ textarea:focus-visible {
   background: var(--color-surface-muted);
 }
 
+.plant-photo-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-md);
+  cursor: zoom-in;
+}
+
+.plant-photo-button:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
 .plant-tile.overdue {
   box-shadow: var(--shadow-sm), inset 3px 0 0 var(--color-danger);
 }
@@ -544,7 +557,8 @@ body.detail-expanded .add-plant-button {
 #room-rename-modal-root,
 #move-room-modal-root,
 #diagnose-picker-modal-root,
-#diagnose-modal-root {
+#diagnose-modal-root,
+.photo-preview-modal-root {
   position: fixed;
   inset: 0;
   background: var(--color-overlay);
@@ -562,7 +576,8 @@ body.detail-expanded .add-plant-button {
 #room-rename-modal-root.hidden,
 #move-room-modal-root.hidden,
 #diagnose-picker-modal-root.hidden,
-#diagnose-modal-root.hidden {
+#diagnose-modal-root.hidden,
+.photo-preview-modal-root.hidden {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -584,6 +599,20 @@ body.detail-expanded .add-plant-button {
   overflow-y: auto;
   box-shadow: var(--shadow-md);
   animation: modal-in 0.2s ease;
+}
+
+.photo-preview-modal {
+  max-width: min(92vw, 960px);
+  width: auto;
+  padding: var(--space-3);
+  padding-top: calc(var(--space-3) + 1.75rem);
+}
+
+.photo-preview-image {
+  display: block;
+  max-width: 100%;
+  max-height: min(80vh, 900px);
+  object-fit: contain;
 }
 
 .add-choice-modal button {

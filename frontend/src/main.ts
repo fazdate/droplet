@@ -32,7 +32,7 @@ import {
 } from './addPlantUi';
 import { renderDiagnoseModal, renderDiagnosePlantPickerModal, createDiagnoseCaptureInput, type DiagnoseStep } from './diagnosePlantUi';
 import { renderMoveRoomModal } from './moveRoomUi';
-import { renderApp } from './render';
+import { renderApp, type PlantPhotoPreview } from './render';
 import { showToast, showUndoToast } from './toast';
 import { locale, t } from './i18n';
 import { acquireWakeLock, releaseWakeLock } from './wakeLock';
@@ -61,6 +61,7 @@ let editingRoomId: number | null = null;
 let diagnosePlantId: number | null = null;
 let diagnoseStep: DiagnoseStep = { name: 'idle' };
 let diagnosePickerOpen = false;
+let photoPreview: PlantPhotoPreview | null = null;
 
 function renderCurrentView(): void {
   renderApp(appRoot, {
@@ -81,6 +82,9 @@ function renderCurrentView(): void {
     expandedRoomId,
     onToggleRoomDetail: handleToggleRoomDetail,
     onRenameRoom: handleRenameRoom,
+    photoPreview,
+    onOpenPhotoPreview: handleOpenPhotoPreview,
+    onClosePhotoPreview: handleClosePhotoPreview,
   });
   // Hide the FAB button when any detail menu is expanded to avoid blocking clicks
   if (expandedPlantId !== null || expandedRoomId !== null) {
@@ -317,6 +321,16 @@ async function handleUndo(token: string): Promise<void> {
 
 function handleToggleDetail(plantId: number): void {
   expandedPlantId = expandedPlantId === plantId ? null : plantId;
+  renderCurrentView();
+}
+
+function handleOpenPhotoPreview(preview: PlantPhotoPreview): void {
+  photoPreview = preview;
+  renderCurrentView();
+}
+
+function handleClosePhotoPreview(): void {
+  photoPreview = null;
   renderCurrentView();
 }
 

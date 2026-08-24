@@ -81,6 +81,9 @@ function baseOptions(overrides: Partial<import('../src/render').RenderAppOptions
     expandedRoomId: null,
     onToggleRoomDetail: vi.fn(),
     onRenameRoom: vi.fn(),
+    photoPreview: null,
+    onOpenPhotoPreview: vi.fn(),
+    onClosePhotoPreview: vi.fn(),
     ...overrides,
   };
 }
@@ -155,6 +158,60 @@ describe('renderApp', () => {
 
     expect(img.src).toContain('/photos/basil.jpg');
     expect(img.src).not.toContain('/thumbnails/');
+  });
+
+  it('should_open_photo_preview_when_the_plant_photo_is_clicked', () => {
+    const container = document.createElement('div');
+    const onOpenPhotoPreview = vi.fn();
+
+    renderApp(
+      container,
+      baseOptions({
+        rooms: [room({ id: 1, plant_count: 1 })],
+        plants: [plant({ id: 1, room_id: 1, photo_path: 'basil.jpg', nickname: 'Basil' })],
+        onOpenPhotoPreview,
+      }),
+    );
+
+    container.querySelector<HTMLButtonElement>('.plant-photo-button')?.click();
+
+    expect(onOpenPhotoPreview).toHaveBeenCalledWith({ photoPath: 'basil.jpg', nickname: 'Basil' });
+  });
+
+  it('should_render_large_photo_preview_when_photo_preview_state_is_set', () => {
+    const container = document.createElement('div');
+
+    renderApp(
+      container,
+      baseOptions({
+        rooms: [room({ id: 1, plant_count: 1 })],
+        plants: [plant({ id: 1, room_id: 1 })],
+        photoPreview: { photoPath: 'basil.jpg', nickname: 'Basil' },
+      }),
+    );
+
+    const preview = container.querySelector<HTMLImageElement>('.photo-preview-image');
+    expect(preview?.src).toContain('/photos/basil.jpg');
+    expect(preview?.alt).toBe('Basil');
+  });
+
+  it('should_close_photo_preview_when_close_button_clicked', () => {
+    const container = document.createElement('div');
+    const onClosePhotoPreview = vi.fn();
+
+    renderApp(
+      container,
+      baseOptions({
+        rooms: [room({ id: 1, plant_count: 1 })],
+        plants: [plant({ id: 1, room_id: 1 })],
+        photoPreview: { photoPath: 'basil.jpg', nickname: 'Basil' },
+        onClosePhotoPreview,
+      }),
+    );
+
+    container.querySelector<HTMLButtonElement>('.photo-preview-modal .modal-close')?.click();
+
+    expect(onClosePhotoPreview).toHaveBeenCalledTimes(1);
   });
 
   it('should_call_onWaterPlant_when_water_button_clicked', () => {

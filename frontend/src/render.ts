@@ -37,6 +37,14 @@ export interface RenderAppOptions {
   expandedRoomId: number | null;
   onToggleRoomDetail: (roomId: number) => void;
   onRenameRoom: (roomId: number) => void;
+  photoPreview: PlantPhotoPreview | null;
+  onOpenPhotoPreview: (preview: PlantPhotoPreview) => void;
+  onClosePhotoPreview: () => void;
+}
+
+export interface PlantPhotoPreview {
+  photoPath: string;
+  nickname: string;
 }
 
 export function renderApp(container: HTMLElement, options: RenderAppOptions): void {
@@ -132,6 +140,10 @@ export function renderApp(container: HTMLElement, options: RenderAppOptions): vo
 
     container.appendChild(section);
   }
+
+  if (options.photoPreview) {
+    container.appendChild(renderPhotoPreviewModal(options.photoPreview, options.onClosePhotoPreview));
+  }
 }
 
 /**
@@ -164,6 +176,14 @@ function renderPlantTile(
   const tile = document.createElement('article');
   tile.className = 'plant-tile' + (plant.is_overdue ? ' overdue' : '');
 
+  const photoButton = document.createElement('button');
+  photoButton.type = 'button';
+  photoButton.className = 'plant-photo-button';
+  photoButton.setAttribute('aria-label', t('photo.openPreview', { name: plant.nickname }));
+  photoButton.addEventListener('click', () =>
+    options.onOpenPhotoPreview({ photoPath: plant.photo_path, nickname: plant.nickname }),
+  );
+
   const photo = document.createElement('img');
   // Memory-friendliness (see TODO.md): request a small server-generated
   // thumbnail instead of decoding the full up-to-1280px upload for a tile
@@ -178,7 +198,8 @@ function renderPlantTile(
   // (e.g. an undecodable source image) so a plant's photo never silently
   // disappears; `{ once: true }` avoids looping if that also 404s.
   photo.addEventListener('error', () => { photo.src = `/photos/${plant.photo_path}`; }, { once: true });
-  tile.appendChild(photo);
+  photoButton.appendChild(photo);
+  tile.appendChild(photoButton);
 
   const info = document.createElement('div');
   info.className = 'plant-info';
@@ -243,6 +264,34 @@ function renderPlantTile(
   }
 
   return tile;
+}
+
+function renderPhotoPreviewModal(preview: PlantPhotoPreview, onClose: () => void): HTMLElement {
+  const root = document.createElement('div');
+  root.className = 'photo-preview-modal-root';
+  root.addEventListener('click', () => onClose());
+
+  const modal = document.createElement('div');
+  modal.className = 'add-plant-modal photo-preview-modal';
+  modal.addEventListener('click', (event) => event.stopPropagation());
+  root.appendChild(modal);
+
+  const closeButton = document.createElement('button');
+  closeButton.type = 'button';
+  closeButton.className = 'modal-close';
+  closeButton.textContent = '×';
+  closeButton.setAttribute('aria-label', t('action.closePhotoPreview'));
+  closeButton.title = t('action.closePhotoPreview');
+  closeButton.addEventListener('click', () => onClose());
+  modal.appendChild(closeButton);
+
+  const image = document.createElement('img');
+  image.className = 'photo-preview-image';
+  image.src = `/photos/${preview.photoPath}`;
+  image.alt = preview.nickname;
+  modal.appendChild(image);
+
+  return root;
 }
 
 function createEmptyStateIcon(): SVGSVGElement {

@@ -35,6 +35,7 @@ const en: Dict = {
   'action.quickActions': 'Quick actions',
   'action.tryAgain': 'Try again',
   'action.addManually': 'Add manually',
+  'action.closePhotoPreview': 'Close photo preview',
 
   'due.notScheduled': 'not scheduled',
   'due.today': 'Water today',
@@ -99,6 +100,7 @@ const en: Dict = {
 
   'modal.identifying': 'Identifying your plant…',
   'modal.isThis': 'Is this a {name}?',
+  'photo.openPreview': 'View larger photo of {name}',
 
   'manual.searchPrompt': "What do you call it? Search first — we'll try to find its care info.",
   'manual.namePlaceholder': 'What do you call it?',
@@ -159,6 +161,7 @@ const hu: Dict = {
   'action.quickActions': 'Gyors műveletek',
   'action.tryAgain': 'Újra próbálkozás',
   'action.addManually': 'Manuális hozzáadás',
+  'action.closePhotoPreview': 'Nagyított fotó bezárása',
 
   'due.notScheduled': 'nincs ütemezve',
   'due.today': 'Ma locsolni kell',
@@ -223,6 +226,7 @@ const hu: Dict = {
 
   'modal.identifying': 'Növény azonosítása…',
   'modal.isThis': 'Ez egy {name}?',
+  'photo.openPreview': 'A(z) {name} fotójának nagyítása',
 
   'manual.searchPrompt': 'Hogy hívod? Keress rá először — megpróbáljuk megtalálni a gondozási adatait.',
   'manual.namePlaceholder': 'Hogy hívod?',
