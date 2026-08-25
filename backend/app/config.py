@@ -59,8 +59,9 @@ class Settings(BaseSettings):
     # --- Language ---
     # Static deployment setting (no in-app switcher): matches the language of
     # the phone(s) that receive push notifications via HA, and the language the
-    # AI model is asked to use for plant names and care guidance. Supported
-    # values are listed in app.languages.SUPPORTED_LANGUAGES.
+    # AI model is asked to use for plant names and care guidance; the cached
+    # care instructions are also rendered in this language. Supported values are
+    # listed in app.languages.SUPPORTED_LANGUAGES.
     language: str = DEFAULT_LANGUAGE
 
     @property

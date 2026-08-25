@@ -10,7 +10,7 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
 from app.config import Settings
-from app.models.orm import Plant, Room, Species, WateringEvent
+from app.models.orm import Plant, Room, Species, SpeciesCareText, WateringEvent
 
 
 def _seed_room_species(engine: Engine) -> tuple[int, int]:
@@ -82,6 +82,33 @@ def test_should_expose_species_care_instructions_on_plant(client: TestClient, en
     assert plant["light"] == "Bright indirect light"
     assert plant["soil"] == "Well-draining potting mix"
     assert plant["notes"] == "Wipe leaves occasionally to keep them dust-free."
+
+
+def test_should_expose_species_care_instructions_in_the_current_language(
+    client: TestClient, engine: Engine, frozen_now: dt.datetime, settings: Settings
+) -> None:
+    settings.language = "hu"
+    with Session(engine) as session:
+        room = Room(name="Living room")
+        species = Species(scientific_name="Monstera deliciosa", watering_interval_days=7, seasonal_profile="tropical")
+        species.care_texts.extend(
+            [
+                SpeciesCareText(language="en", light="Bright indirect light", soil="Well-draining potting mix", notes="Wipe leaves."),
+                SpeciesCareText(language="hu", light="Fényes, közvetett fény", soil="Jól áteresztő talaj", notes="Töröld át a leveleket."),
+            ]
+        )
+        session.add_all([room, species])
+        session.commit()
+        room_id, species_id = room.id, species.id
+    plant_id = _seed_plant(engine, room_id, species_id)
+
+    with freeze_time(frozen_now):
+        response = client.get("/api/plants")
+
+    plant = next(p for p in response.json() if p["id"] == plant_id)
+    assert plant["light"] == "Fényes, közvetett fény"
+    assert plant["soil"] == "Jól áteresztő talaj"
+    assert plant["notes"] == "Töröld át a leveleket."
 
 
 def test_should_expose_null_care_instructions_when_species_lacks_them(

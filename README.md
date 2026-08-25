@@ -21,7 +21,7 @@ for photo identification).
   pause every reminder for a while
 - **Push notifications via Home Assistant** (optional): actionable "Watered" / "Snooze" / "Away"
   buttons on your phone, quiet hours, and twice-daily escalation for overdue plants
-- **Multi-language** notifications and AI-suggested plant names (English / Hungarian today)
+- **Multi-language** notifications, AI-suggested plant names, and care instructions (English / Hungarian today)
 - Installable as a **mobile home-screen app** (manifest + icons), with a wake lock while adding
   plants so the screen doesn't sleep mid-photo
 - Nightly **backups** and **orphaned-photo cleanup** scripts, a `/api/health` endpoint, and a
@@ -96,7 +96,7 @@ variable inline). `.env` is git-ignored and must never be committed — it holds
 | `TIMEZONE` | no | IANA timezone name (e.g. `Europe/Budapest`), used for quiet hours and the twice-daily overdue reminders. Defaults to UTC |
 | `QUIET_HOURS_START` / `QUIET_HOURS_END` | no | Hour range (0-23) during which notifications are suppressed. Defaults `22`–`8` |
 | `HEMISPHERE` | no | `northern` or `southern` — used to nudge watering intervals with the seasons |
-| `LANGUAGE` | no | `en` or `hu` — language for notifications and AI-suggested plant names |
+| `LANGUAGE` | no | `en` or `hu` — language for notifications, AI-suggested plant names, and care instructions |
 
 \* `HA_BASE_URL`, `HA_LONG_LIVED_TOKEN`, and `HA_WEBHOOK_SECRET` must be set to *something*
 for the app to start (they're required settings), but Home Assistant integration itself is

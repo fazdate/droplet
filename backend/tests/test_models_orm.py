@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from app.models.orm import Base, Plant, Room, Species, WateringEvent
+from app.models.orm import Base, Plant, Room, Species, SpeciesCareText, SpeciesCommonName, WateringEvent
 
 
 @pytest.fixture
@@ -40,6 +40,37 @@ def test_should_create_species_with_required_fields_and_source_default(session: 
     assert species.source == "manual"
     assert species.reference_image_url is None
     assert species.seasonal_profile == "temperate"
+
+
+def test_should_select_care_text_for_requested_language(session: Session) -> None:
+    species = Species(scientific_name="Monstera deliciosa", watering_interval_days=7)
+    species.care_texts.extend(
+        [
+            SpeciesCareText(language="en", light="Bright indirect light", soil="Well-draining potting mix"),
+            SpeciesCareText(language="hu", light="Fényes, közvetett fény", soil="Jól áteresztő talaj"),
+        ]
+    )
+    session.add(species)
+    session.commit()
+
+    assert species.care_text_for("hu") == ("Fényes, közvetett fény", "Jól áteresztő talaj", None)
+    assert species.has_care_text_for("en") is True
+
+
+def test_should_select_common_name_for_requested_language(session: Session) -> None:
+    species = Species(scientific_name="Monstera deliciosa", watering_interval_days=7, common_name="Swiss cheese plant")
+    species.common_name_language = "en"
+    species.common_names.extend(
+        [
+            SpeciesCommonName(language="en", common_name="Swiss cheese plant"),
+            SpeciesCommonName(language="hu", common_name="Szörnyeteg növény"),
+        ]
+    )
+    session.add(species)
+    session.commit()
+
+    assert species.common_name_for("hu") == "Szörnyeteg növény"
+    assert species.has_common_name_for("en") is True
 
 
 def test_should_create_plant_linked_to_species_and_room(session: Session) -> None:

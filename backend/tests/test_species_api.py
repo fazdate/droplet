@@ -23,7 +23,25 @@ def ai_client() -> MagicMock:
         SpeciesCandidate(scientific_name="Monstera deliciosa", common_name="Swiss cheese plant", confidence=0.92),
         SpeciesCandidate(scientific_name="Epipremnum aureum", common_name="Pothos", confidence=0.05),
     ]
-    client.describe_care.return_value = {"watering_interval_days": 7, "seasonal_profile": "tropical"}
+    client.describe_care.return_value = {
+        "watering_interval_days": 7,
+        "light": "bright indirect",
+        "soil": "well-draining potting mix",
+        "notes": "Likes humidity.",
+        "seasonal_profile": "tropical",
+    }
+    async def _resolve_species_by_name(query: str, *, language: str = "en"):
+        if language == "hu" and query == "Monstera deliciosa":
+            return [SpeciesCandidate(scientific_name="Monstera deliciosa", common_name="Szörnyeteg növény", confidence=0.9)]
+        if language == "en" and query == "Monstera deliciosa":
+            return [SpeciesCandidate(scientific_name="Monstera deliciosa", common_name="Swiss cheese plant", confidence=0.9)]
+        if language == "hu" and query == "Epipremnum aureum":
+            return [SpeciesCandidate(scientific_name="Epipremnum aureum", common_name="Aranytarka szobafutóka", confidence=0.9)]
+        if language == "en" and query == "Epipremnum aureum":
+            return [SpeciesCandidate(scientific_name="Epipremnum aureum", common_name="Pothos", confidence=0.9)]
+        return []
+
+    client.resolve_species_by_name.side_effect = _resolve_species_by_name
     return client
 
 
@@ -94,7 +112,7 @@ def test_should_reuse_cached_species_on_second_identify_call(
 
     with Session(engine) as session:
         assert session.query(Species).filter_by(scientific_name="Monstera deliciosa").count() == 1
-    assert ai_client.describe_care.call_count <= 2
+    assert ai_client.describe_care.call_count == 4
 
 
 def test_should_look_up_species_by_name(app_client: TestClient, engine: Engine) -> None:
@@ -122,16 +140,23 @@ def test_should_fall_back_to_model_name_resolution_for_hungarian_query_with_no_o
     app_client: TestClient, ai_client: MagicMock, settings: Settings, engine: Engine
 ) -> None:
     settings.language = "hu"
-    ai_client.resolve_species_by_name.return_value = [
-        SpeciesCandidate(scientific_name="Dypsis lutescens", common_name="Areka pálma", confidence=0.8),
-    ]
+    async def resolve_species_by_name(query: str, *, language: str = "en"):
+        if language == "hu" and query == "areka pálma":
+            return [SpeciesCandidate(scientific_name="Dypsis lutescens", common_name="Areka pálma", confidence=0.8)]
+        if language == "en" and query == "Dypsis lutescens":
+            return [SpeciesCandidate(scientific_name="Dypsis lutescens", common_name="Areca palm", confidence=0.8)]
+        return []
+
+    ai_client.resolve_species_by_name.side_effect = resolve_species_by_name
 
     response = app_client.get("/api/species/lookup", params={"q": "areka pálma"})
 
     assert response.status_code == 200
     candidates = response.json()["candidates"]
     assert any(c["scientific_name"] == "Dypsis lutescens" and c["common_name"] == "Areka pálma" for c in candidates)
-    ai_client.resolve_species_by_name.assert_called_once_with("areka pálma", language="hu")
+    assert ai_client.resolve_species_by_name.call_count == 2
+    ai_client.resolve_species_by_name.assert_any_call("areka pálma", language="hu")
+    ai_client.resolve_species_by_name.assert_any_call("Dypsis lutescens", language="en")
     with Session(engine) as session:
         assert session.query(Species).filter_by(scientific_name="Dypsis lutescens").count() == 1
 

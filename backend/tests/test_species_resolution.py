@@ -23,6 +23,24 @@ async def test_should_create_new_species_with_resolved_care_data() -> None:
         perenual.search_species.return_value = [{"id": 1, "scientific_name": "Monstera deliciosa", "watering": "average"}]
         perenual.get_care_details.return_value = PerenualCareDetails(interval_days=8, light=None, soil=None)
         ai = MagicMock(spec=AiVisionClient)
+        ai.describe_care = AsyncMock(
+            side_effect=[
+                {
+                    "watering_interval_days": 7,
+                    "light": "bright indirect",
+                    "soil": "well-draining",
+                    "notes": "Likes humidity.",
+                    "seasonal_profile": "tropical",
+                },
+                {
+                    "watering_interval_days": 7,
+                    "light": "fényes, közvetett fény",
+                    "soil": "jól áteresztő talaj",
+                    "notes": "Szereti a párát.",
+                    "seasonal_profile": "tropical",
+                },
+            ]
+        )
 
         species = await get_or_create_species(
             session,
@@ -37,6 +55,8 @@ async def test_should_create_new_species_with_resolved_care_data() -> None:
         assert species.watering_interval_days == 8
         assert species.source == "perenual"
         assert species.reference_image_url == "https://example.com/img.jpg"
+        assert species.care_text_record_for("en") is not None
+        assert species.care_text_record_for("hu") is not None
         assert session.query(Species).count() == 1
 
 
@@ -46,6 +66,7 @@ async def test_should_reuse_cached_non_manual_species_without_calling_external_a
         session.commit()
         perenual = MagicMock(spec=PerenualClient)
         ai = MagicMock(spec=AiVisionClient)
+        ai.describe_care = AsyncMock(return_value={})
 
         species = await get_or_create_species(
             session,
@@ -69,7 +90,7 @@ async def test_should_not_reuse_manual_species_for_ai_identification() -> None:
         perenual = MagicMock(spec=PerenualClient)
         perenual.search_species.return_value = []
         ai = MagicMock(spec=AiVisionClient)
-        ai.describe_care.return_value = {"watering_interval_days": 7, "seasonal_profile": "tropical"}
+        ai.describe_care = AsyncMock(return_value={"watering_interval_days": 7, "seasonal_profile": "tropical"})
 
         species = await get_or_create_species(
             session,
@@ -91,13 +112,15 @@ async def test_should_retry_reference_image_for_cached_species_missing_one_when_
         )
         session.commit()
         fetcher = AsyncMock(return_value="https://example.com/monstera.jpg")
+        ai = MagicMock(spec=AiVisionClient)
+        ai.describe_care = AsyncMock(return_value={})
 
         species = await get_or_create_species(
             session,
             scientific_name="Monstera deliciosa",
             common_name="Swiss cheese plant",
             perenual_client=MagicMock(spec=PerenualClient),
-            ai_client=MagicMock(spec=AiVisionClient),
+            ai_client=ai,
             reference_image_fetcher=fetcher,
             refresh_common_name=True,
         )
@@ -113,13 +136,15 @@ async def test_should_not_retry_reference_image_when_not_refreshing() -> None:
         )
         session.commit()
         fetcher = AsyncMock(return_value="https://example.com/monstera.jpg")
+        ai = MagicMock(spec=AiVisionClient)
+        ai.describe_care = AsyncMock(return_value={})
 
         species = await get_or_create_species(
             session,
             scientific_name="Monstera deliciosa",
             common_name=None,
             perenual_client=MagicMock(spec=PerenualClient),
-            ai_client=MagicMock(spec=AiVisionClient),
+            ai_client=ai,
             reference_image_fetcher=fetcher,
         )
 
@@ -139,13 +164,15 @@ async def test_should_not_refetch_reference_image_when_already_present() -> None
         )
         session.commit()
         fetcher = AsyncMock(return_value="https://example.com/new.jpg")
+        ai = MagicMock(spec=AiVisionClient)
+        ai.describe_care = AsyncMock(return_value={})
 
         species = await get_or_create_species(
             session,
             scientific_name="Monstera deliciosa",
             common_name=None,
             perenual_client=MagicMock(spec=PerenualClient),
-            ai_client=MagicMock(spec=AiVisionClient),
+            ai_client=ai,
             reference_image_fetcher=fetcher,
             refresh_common_name=True,
         )
@@ -168,11 +195,12 @@ async def test_should_refresh_care_text_on_language_mismatch_when_refreshing() -
         )
         session.commit()
         ai = MagicMock(spec=AiVisionClient)
-        ai.describe_care.return_value = {
-            "light": "fényes, közvetett fény",
-            "soil": "jól áteresztő talaj",
-            "notes": "Szereti a párát.",
-        }
+        ai.describe_care = AsyncMock(
+            side_effect=[
+                {"light": "bright indirect", "soil": "well-draining", "notes": "Likes humidity."},
+                {"light": "fényes, közvetett fény", "soil": "jól áteresztő talaj", "notes": "Szereti a párát."},
+            ]
+        )
 
         species = await get_or_create_species(
             session,
@@ -185,16 +213,18 @@ async def test_should_refresh_care_text_on_language_mismatch_when_refreshing() -
             language="hu",
         )
 
-        ai.describe_care.assert_called_once_with("Monstera deliciosa", language="hu")
+        assert ai.describe_care.call_count == 2
         assert species.light == "fényes, közvetett fény"
         assert species.soil == "jól áteresztő talaj"
         assert species.notes == "Szereti a párát."
         assert species.care_language == "hu"
         assert species.watering_interval_days == 7
         assert species.source == "perenual"
+        assert species.care_text_record_for("en") is not None
+        assert species.care_text_record_for("hu") is not None
 
 
-async def test_should_not_refresh_care_text_when_language_unchanged() -> None:
+async def test_should_refresh_care_text_when_language_unchanged_but_secondary_language_is_missing() -> None:
     with _session() as session:
         session.add(
             Species(
@@ -207,8 +237,9 @@ async def test_should_not_refresh_care_text_when_language_unchanged() -> None:
         )
         session.commit()
         ai = MagicMock(spec=AiVisionClient)
+        ai.describe_care = AsyncMock(return_value={"light": "bright indirect"})
 
-        await get_or_create_species(
+        species = await get_or_create_species(
             session,
             scientific_name="Monstera deliciosa",
             common_name=None,
@@ -219,7 +250,8 @@ async def test_should_not_refresh_care_text_when_language_unchanged() -> None:
             language="en",
         )
 
-        ai.describe_care.assert_not_called()
+        assert ai.describe_care.call_count == 2
+        assert species.care_text_record_for("hu") is not None
 
 
 async def test_should_refresh_legacy_care_text_with_no_care_language_recorded() -> None:
@@ -237,11 +269,12 @@ async def test_should_refresh_legacy_care_text_with_no_care_language_recorded() 
         )
         session.commit()
         ai = MagicMock(spec=AiVisionClient)
-        ai.describe_care.return_value = {
-            "light": "fényes, közvetett fény",
-            "soil": "jól áteresztő talaj",
-            "notes": "Szereti a párát.",
-        }
+        ai.describe_care = AsyncMock(
+            side_effect=[
+                {"light": "bright indirect", "soil": "well-draining", "notes": "Likes humidity."},
+                {"light": "fényes, közvetett fény", "soil": "jól áteresztő talaj", "notes": "Szereti a párát."},
+            ]
+        )
 
         species = await get_or_create_species(
             session,
@@ -254,18 +287,26 @@ async def test_should_refresh_legacy_care_text_with_no_care_language_recorded() 
             language="hu",
         )
 
-        ai.describe_care.assert_called_once_with("Monstera deliciosa", language="hu")
+        assert ai.describe_care.call_count == 2
         assert species.light == "fényes, közvetett fény"
         assert species.care_language == "hu"
+        assert species.care_text_record_for("en") is not None
+        assert species.care_text_record_for("hu") is not None
 
 
-async def test_should_not_refresh_care_text_when_never_resolved() -> None:
+async def test_should_refresh_care_text_even_when_no_text_was_cached_yet() -> None:
     with _session() as session:
         session.add(Species(scientific_name="Monstera deliciosa", watering_interval_days=7, source="perenual", care_language=None))
         session.commit()
         ai = MagicMock(spec=AiVisionClient)
+        ai.describe_care = AsyncMock(
+            side_effect=[
+                {"light": "bright indirect", "soil": "well-draining", "notes": "Likes humidity."},
+                {"light": "fényes, közvetett fény", "soil": "jól áteresztő talaj", "notes": "Szereti a párát."},
+            ]
+        )
 
-        await get_or_create_species(
+        species = await get_or_create_species(
             session,
             scientific_name="Monstera deliciosa",
             common_name=None,
@@ -276,4 +317,6 @@ async def test_should_not_refresh_care_text_when_never_resolved() -> None:
             language="hu",
         )
 
-        ai.describe_care.assert_not_called()
+        assert ai.describe_care.call_count == 2
+        assert species.care_text_record_for("en") is not None
+        assert species.care_text_record_for("hu") is not None

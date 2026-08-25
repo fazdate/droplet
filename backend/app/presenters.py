@@ -3,12 +3,15 @@ the species/add-plant router."""
 
 import datetime as dt
 
+from app.languages import DEFAULT_LANGUAGE
 from app.models.orm import Plant
 from app.schemas import PlantOut
 from app.services.schedule import compute_effective_interval
 
 
-def plant_to_out(plant: Plant, now: dt.datetime, hemisphere: str) -> PlantOut:
+def plant_to_out(plant: Plant, now: dt.datetime, hemisphere: str, language: str = DEFAULT_LANGUAGE) -> PlantOut:
+    light, soil, notes = plant.species.care_text_for(language)
+    common_name = plant.species.common_name_for(language)
     recommended_interval_days = compute_effective_interval(
         base_interval_days=plant.species.watering_interval_days,
         month=now.month,
@@ -23,7 +26,7 @@ def plant_to_out(plant: Plant, now: dt.datetime, hemisphere: str) -> PlantOut:
         room_id=plant.room_id,
         room_name=plant.room.name,
         species_id=plant.species_id,
-        species_common_name=plant.species.common_name,
+        species_common_name=common_name,
         photo_path=plant.photo_path,
         next_due_at=plant.next_due_at,
         last_watered_at=plant.last_watered_at,
@@ -32,7 +35,7 @@ def plant_to_out(plant: Plant, now: dt.datetime, hemisphere: str) -> PlantOut:
         seasonal_adjust_enabled=plant.seasonal_adjust_enabled,
         recommended_interval_days=recommended_interval_days,
         care_source=plant.species.source,
-        light=plant.species.light,
-        soil=plant.species.soil,
-        notes=plant.species.notes,
+        light=light,
+        soil=soil,
+        notes=notes,
     )

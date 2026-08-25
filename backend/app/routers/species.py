@@ -18,7 +18,7 @@ from app.clients.wikipedia import fetch_reference_image_url
 from app.config import Settings
 from app.deps import get_ai_client, get_db, get_http_client, get_perenual_client, get_settings
 from app.languages import DEFAULT_LANGUAGE
-from app.models.orm import Plant, Room, Species
+from app.models.orm import Plant, Room, Species, SpeciesCommonName
 from app.presenters import plant_to_out
 from app.schemas import (
     IdentifyCandidateOut,
@@ -39,11 +39,11 @@ LOG = logging.getLogger(__name__)
 router = APIRouter(tags=["species"])
 
 
-def _candidate_out(species: Species, confidence: float | None) -> IdentifyCandidateOut:
+def _candidate_out(species: Species, confidence: float | None, language: str) -> IdentifyCandidateOut:
     return IdentifyCandidateOut(
         species_id=species.id,
         scientific_name=species.scientific_name,
-        common_name=species.common_name,
+        common_name=species.common_name_for(language),
         confidence=confidence,
         reference_image_url=species.reference_image_url,
     )
@@ -97,7 +97,7 @@ async def _resolve_candidates_concurrently(
         )
     )
     species_by_name = {name: species for (name, _common_name, _confidence), species in zip(unique_candidates, resolved)}
-    return [_candidate_out(species_by_name[name], confidence) for name, _common_name, confidence in candidates]
+    return [_candidate_out(species_by_name[name], confidence, language) for name, _common_name, confidence in candidates]
 
 
 @router.post("/api/identify", response_model=IdentifyResponse)
@@ -153,13 +153,20 @@ async def lookup_species(
 ) -> SpeciesLookupResponse:
     pattern = f"%{q}%"
     existing = db.scalars(
-        select(Species).where(
-            or_(Species.scientific_name.ilike(pattern), Species.common_name.ilike(pattern))
+        select(Species)
+        .outerjoin(Species.common_names)
+        .where(
+            or_(
+                Species.scientific_name.ilike(pattern),
+                Species.common_name.ilike(pattern),
+                SpeciesCommonName.common_name.ilike(pattern),
+            )
         )
+        .distinct()
     ).all()
     known_names = {s.scientific_name for s in existing}
 
-    candidates = [_candidate_out(s, None) for s in existing]
+    candidates = [_candidate_out(s, None, settings.language) for s in existing]
 
     perenual_hits = [
         (name, hit.get("common_name"), None)
@@ -219,11 +226,11 @@ def create_manual_species(payload: SpeciesManualCreate, db: Session = Depends(ge
     return {"species_id": species.id, "scientific_name": species.scientific_name}
 
 
-def _derive_nickname(db: Session, species: Species) -> str:
+def _derive_nickname(species: Species, language: str) -> str:
     # Return just the species name without numeric suffixes. Multiple plants of
     # the same species will have the same display name, but they can be
     # distinguished by their photos, and users can set custom nicknames if needed.
-    return species.common_name or species.scientific_name
+    return species.common_name_for(language) or species.scientific_name
 
 
 @router.post("/api/plants", response_model=PlantOut, status_code=201)
@@ -238,7 +245,7 @@ def create_plant_endpoint(
         raise not_found("Room")
 
     is_custom_nickname = bool(payload.nickname and payload.nickname.strip())
-    nickname = payload.nickname.strip() if is_custom_nickname else _derive_nickname(db, species)
+    nickname = payload.nickname.strip() if is_custom_nickname else _derive_nickname(species, settings.language)
     now = dt.datetime.now(dt.timezone.utc)
 
     plant = create_plant(
@@ -255,4 +262,4 @@ def create_plant_endpoint(
     db.flush()
     db.refresh(plant)
 
-    return plant_to_out(plant, now, settings.hemisphere)
+    return plant_to_out(plant, now, settings.hemisphere, settings.language)

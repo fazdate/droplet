@@ -56,6 +56,35 @@ def _apply_schema_patches(engine: Engine) -> None:
         if "care_language" not in existing_species_columns:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE species ADD COLUMN care_language VARCHAR"))
+        if "common_name_language" not in existing_species_columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE species ADD COLUMN common_name_language VARCHAR"))
+
+    if "species_common_name" in inspector.get_table_names() and "species" in inspector.get_table_names():
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    INSERT OR IGNORE INTO species_common_name (species_id, language, common_name)
+                    SELECT id, COALESCE(common_name_language, care_language, 'en'), common_name
+                    FROM species
+                    WHERE common_name IS NOT NULL
+                    """
+                )
+            )
+
+    if "species_care_text" in inspector.get_table_names() and "species" in inspector.get_table_names():
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    INSERT OR IGNORE INTO species_care_text (species_id, language, light, soil, notes)
+                    SELECT id, COALESCE(care_language, 'en'), light, soil, notes
+                    FROM species
+                    WHERE light IS NOT NULL OR soil IS NOT NULL OR notes IS NOT NULL
+                    """
+                )
+            )
 
 
 @contextmanager

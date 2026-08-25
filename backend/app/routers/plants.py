@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.clients.ai import AiDiagnoseError, AiUnavailableError, AiVisionClient
 from app.config import Settings
 from app.deps import get_db, get_diagnose_ai_client, get_settings
-from app.models.orm import Plant, Room, WateringEvent
+from app.models.orm import Plant, Room, Species, WateringEvent
 from app.presenters import plant_to_out
 from app.schemas import DiagnoseIssueOut, DiagnoseResponse, PlantOut, PlantUpdate, UndoRequest, UndoResult, WaterResult
 from app.services.photo_storage import save_upload
@@ -55,9 +55,13 @@ def _get_undo_store(request: Request) -> dict:
 def list_plants(db: Session = Depends(get_db), settings: Settings = Depends(get_settings)) -> list[PlantOut]:
     now = dt.datetime.now(dt.timezone.utc)
     plants = db.scalars(
-        select(Plant).options(joinedload(Plant.room), joinedload(Plant.species))
+        select(Plant).options(
+            joinedload(Plant.room),
+            joinedload(Plant.species).selectinload(Species.care_texts),
+            joinedload(Plant.species).selectinload(Species.common_names),
+        )
     ).all()
-    return [plant_to_out(plant, now, settings.hemisphere) for plant in plants]
+    return [plant_to_out(plant, now, settings.hemisphere, settings.language) for plant in plants]
 
 
 def _record_undo(store: dict, entries: list[dict]) -> str:
@@ -190,7 +194,7 @@ def update_plant(
 
     db.flush()
     db.refresh(plant)
-    return plant_to_out(plant, dt.datetime.now(dt.timezone.utc), settings.hemisphere)
+    return plant_to_out(plant, dt.datetime.now(dt.timezone.utc), settings.hemisphere, settings.language)
 
 
 @router.post("/api/plants/{plant_id}/photo", response_model=PlantOut)
@@ -221,7 +225,7 @@ async def update_plant_photo(
     (photos_dir / old_photo_id).unlink(missing_ok=True)
     (thumbnails_dir(photos_dir) / thumbnail_filename(old_photo_id)).unlink(missing_ok=True)
 
-    return plant_to_out(plant, dt.datetime.now(dt.timezone.utc), settings.hemisphere)
+    return plant_to_out(plant, dt.datetime.now(dt.timezone.utc), settings.hemisphere, settings.language)
 
 
 @router.post("/api/plants/{plant_id}/diagnose", response_model=DiagnoseResponse)
@@ -245,7 +249,7 @@ async def diagnose_plant_issues(
         raise not_found("Plant")
 
     content = await photo.read()
-    species_name = plant.species.common_name or plant.species.scientific_name
+    species_name = plant.species.common_name_for(settings.language) or plant.species.scientific_name
 
     try:
         result = await diagnose_client.diagnose_plant(
@@ -296,4 +300,4 @@ def reset_interval_override(
     _recompute_next_due(plant, settings.hemisphere)
     db.flush()
     db.refresh(plant)
-    return plant_to_out(plant, dt.datetime.now(dt.timezone.utc), settings.hemisphere)
+    return plant_to_out(plant, dt.datetime.now(dt.timezone.utc), settings.hemisphere, settings.language)
