@@ -1,5 +1,6 @@
 import type { PlantOut, RoomSummary } from './api';
 import { createModalCloseButton } from './addPlantUi';
+import { capitalizeName } from './format';
 import { t } from './i18n';
 
 export interface MoveRoomModalOptions {
@@ -31,7 +32,7 @@ export function renderMoveRoomModal(container: HTMLElement, options: MoveRoomMod
   modal.appendChild(createModalCloseButton(() => options.onCancel()));
 
   const title = document.createElement('p');
-  title.textContent = t('roomPicker.moveTitle', { name: plant.nickname });
+  title.textContent = t('roomPicker.moveTitle', { name: capitalizeName(plant.nickname) });
   modal.appendChild(title);
 
   const otherRooms = options.rooms.filter((room) => room.id !== plant.room_id);

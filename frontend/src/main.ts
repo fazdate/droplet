@@ -32,6 +32,7 @@ import {
 } from './addPlantUi';
 import { renderDiagnoseModal, renderDiagnosePlantPickerModal, createDiagnoseCaptureInput, type DiagnoseStep } from './diagnosePlantUi';
 import { renderMoveRoomModal } from './moveRoomUi';
+import { capitalizeName } from './format';
 import { renderApp, type PlantPhotoPreview } from './render';
 import { showToast, showUndoToast } from './toast';
 import { locale, t } from './i18n';
@@ -204,7 +205,7 @@ function updateDiagnoseModal(): void {
 
   renderDiagnoseModal(diagnoseModalRoot, {
     step: diagnoseStep,
-    plantName: plant.nickname,
+    plantName: capitalizeName(plant.nickname),
     onDismiss: handleDismissDiagnose,
   });
 }
@@ -424,7 +425,7 @@ async function handleMoveToRoom(plantId: number, roomId: number): Promise<void> 
 
 async function handleRemovePlant(plantId: number): Promise<void> {
   const plant = currentPlants.find((p) => p.id === plantId);
-  const name = plant?.nickname ?? '';
+  const name = capitalizeName(plant?.nickname ?? '');
   if (!window.confirm(t('confirm.removePlant', { name }))) return;
 
   try {

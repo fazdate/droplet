@@ -2,6 +2,17 @@
 
 import { t } from './i18n';
 
+/**
+ * Capitalizes the first letter of a plant/species name.
+ *
+ * The plant-ID AI occasionally returns common/scientific names that start
+ * with a lowercase letter (e.g. "monstera deliciosa"). Names are always
+ * displayed capitalized regardless of what the backend returns.
+ */
+export function capitalizeName(name: string): string {
+  return name.length > 0 ? name[0].toUpperCase() + name.slice(1) : name;
+}
+
 function startOfUtcDay(date: Date): number {
   return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 }

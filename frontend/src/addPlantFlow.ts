@@ -1,4 +1,5 @@
 import type { IdentifyCandidate, PlantOut, RoomSummary } from './api';
+import { capitalizeName } from './format';
 import { t } from './i18n';
 
 /** Dependencies injected so this module is unit-testable without real fetch/DOM globals. */
@@ -85,7 +86,7 @@ export class AddPlantFlow {
       name: 'nickname-prompt',
       photoId,
       species_id: candidate.species_id,
-      defaultName: candidate.common_name ?? candidate.scientific_name,
+      defaultName: capitalizeName(candidate.common_name ?? candidate.scientific_name),
     });
   }
 

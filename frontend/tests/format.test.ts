@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dueLabel } from '../src/format';
+import { capitalizeName, dueLabel } from '../src/format';
 
 describe('dueLabel', () => {
   const now = new Date('2026-08-17T09:00:00Z');
@@ -30,5 +30,19 @@ describe('dueLabel', () => {
 
   it('should_show_not_scheduled_when_next_due_is_null', () => {
     expect(dueLabel(null, now)).toBe('not scheduled');
+  });
+});
+
+describe('capitalizeName', () => {
+  it('should_capitalize_lowercase_first_letter', () => {
+    expect(capitalizeName('monstera deliciosa')).toBe('Monstera deliciosa');
+  });
+
+  it('should_leave_already_capitalized_name_unchanged', () => {
+    expect(capitalizeName('Monstera Deliciosa')).toBe('Monstera Deliciosa');
+  });
+
+  it('should_handle_empty_string', () => {
+    expect(capitalizeName('')).toBe('');
   });
 });

@@ -1,4 +1,5 @@
 import type { IdentifyCandidate, RoomSummary } from './api';
+import { capitalizeName } from './format';
 import { t } from './i18n';
 
 export type AddPlantStep =
@@ -401,7 +402,7 @@ function renderCandidatesStep(candidates: IdentifyCandidate[], handlers: AddPlan
   const [top, ...rest] = candidates;
 
   const question = document.createElement('p');
-  question.textContent = t('modal.isThis', { name: top.common_name ?? top.scientific_name });
+  question.textContent = t('modal.isThis', { name: capitalizeName(top.common_name ?? top.scientific_name) });
   wrapper.appendChild(question);
 
   if (top.reference_image_url) {
@@ -446,7 +447,7 @@ function renderCandidatesStep(candidates: IdentifyCandidate[], handlers: AddPlan
       }
 
       const label = document.createElement('span');
-      label.textContent = candidate.common_name ?? candidate.scientific_name;
+      label.textContent = capitalizeName(candidate.common_name ?? candidate.scientific_name);
       button.appendChild(label);
 
       li.appendChild(button);
@@ -521,7 +522,7 @@ function renderManualStep(handlers: AddPlantModalHandlers): HTMLElement {
           const button = document.createElement('button');
           button.type = 'button';
           button.className = 'search-result-button';
-          button.textContent = result.common_name ?? result.scientific_name;
+          button.textContent = capitalizeName(result.common_name ?? result.scientific_name);
           button.addEventListener('click', () => handlers.onAcceptCandidate(result));
           li.appendChild(button);
           resultsList.appendChild(li);

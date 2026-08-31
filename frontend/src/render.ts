@@ -1,7 +1,7 @@
 import type { PlantOut, RoomSummary } from './api';
 import { renderCadenceEditor } from './cadenceEditor';
 import { renderCareInfo } from './careInfo';
-import { dueLabel } from './format';
+import { capitalizeName, dueLabel } from './format';
 import { t } from './i18n';
 
 export function sortRoomsByUrgency(rooms: RoomSummary[]): RoomSummary[] {
@@ -179,7 +179,7 @@ function renderPlantTile(
   const photoButton = document.createElement('button');
   photoButton.type = 'button';
   photoButton.className = 'plant-photo-button';
-  photoButton.setAttribute('aria-label', t('photo.openPreview', { name: plant.nickname }));
+  photoButton.setAttribute('aria-label', t('photo.openPreview', { name: capitalizeName(plant.nickname) }));
   photoButton.addEventListener('click', () =>
     options.onOpenPhotoPreview({ photoPath: plant.photo_path, nickname: plant.nickname }),
   );
@@ -191,7 +191,7 @@ function renderPlantTile(
   // style.css) — see app.services.thumbnails for why this matters for
   // avoiding Android's low-memory tab discard/reload while the camera is open.
   photo.src = `/photos/thumbnails/${plant.photo_path}`;
-  photo.alt = plant.nickname;
+  photo.alt = capitalizeName(plant.nickname);
   photo.loading = 'lazy';
   photo.decoding = 'async';
   // Falls back to the full photo if thumbnail generation failed server-side
@@ -206,7 +206,7 @@ function renderPlantTile(
 
   const name = document.createElement('h3');
   name.className = 'plant-name';
-  name.textContent = plant.nickname;
+  name.textContent = capitalizeName(plant.nickname);
   info.appendChild(name);
 
   const due = document.createElement('span');
@@ -288,7 +288,7 @@ function renderPhotoPreviewModal(preview: PlantPhotoPreview, onClose: () => void
   const image = document.createElement('img');
   image.className = 'photo-preview-image';
   image.src = `/photos/${preview.photoPath}`;
-  image.alt = preview.nickname;
+  image.alt = capitalizeName(preview.nickname);
   modal.appendChild(image);
 
   return root;

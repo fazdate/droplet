@@ -1,5 +1,6 @@
 import type { DiagnoseResponse, PlantOut } from './api';
 import { createModalCloseButton } from './addPlantUi';
+import { capitalizeName } from './format';
 import { t } from './i18n';
 
 export type DiagnoseStep =
@@ -38,7 +39,7 @@ export function renderDiagnoseModal(container: HTMLElement, options: DiagnoseMod
   modal.appendChild(createModalCloseButton(() => options.onDismiss()));
 
   const title = document.createElement('p');
-  title.textContent = t('diagnose.title', { name: options.plantName });
+  title.textContent = t('diagnose.title', { name: capitalizeName(options.plantName) });
   modal.appendChild(title);
 
   if (step.name === 'loading') {
