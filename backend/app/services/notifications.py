@@ -34,18 +34,14 @@ def is_quiet_hours(
     return hour >= quiet_hours_start or hour < quiet_hours_end
 
 
-def _escalation_slot(now: dt.datetime, next_due_at: dt.datetime, timezone_name: str = "UTC") -> tuple[dt.date, str]:
-    """Identifies which "reminder slot" `now` falls into, relative to `next_due_at`:
-    - "due": the (single) reminder on the due date, before 1 full day late.
-    - "am"/"pm": the twice-daily slots (09:00, 18:00) once 1+ day late.
-    Two datetimes in the same slot should not both trigger a send.
+def _escalation_slot(now: dt.datetime, timezone_name: str = "UTC") -> tuple[dt.date, str]:
+    """Identifies which twice-daily "reminder slot" (09:00 "am", 18:00 "pm")
+    `now` falls into, from the due date onward. Two datetimes in the same slot
+    should not both trigger a send. The overnight hours (before 09:00) belong
+    to the previous day's "pm" slot so a quiet-hours check just after midnight
+    doesn't open up a fresh slot.
     """
     local_now = _to_local(now, timezone_name)
-    if now - next_due_at < dt.timedelta(days=1):
-        # Anchored to the due date itself (not now.date()) so this stays a
-        # single stable slot for the whole "not yet 1 full day late" window,
-        # even if a periodic check happens to run after local midnight.
-        return (_to_local(next_due_at, timezone_name).date(), "due")
     if local_now.hour < _AM_SLOT_START_HOUR:
         return (local_now.date() - dt.timedelta(days=1), "pm")
     if local_now.hour < _PM_SLOT_START_HOUR:
@@ -74,9 +70,7 @@ def should_notify_plant(
         return False
     if last_notified_at is None:
         return True
-    return _escalation_slot(now, next_due_at, timezone_name) != _escalation_slot(
-        last_notified_at, next_due_at, timezone_name
-    )
+    return _escalation_slot(now, timezone_name) != _escalation_slot(last_notified_at, timezone_name)
 
 
 @dataclass(frozen=True)

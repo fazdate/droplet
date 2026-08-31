@@ -74,15 +74,29 @@ class TestShouldNotifyPlant:
     def test_should_not_renotify_same_day_after_due_notification_sent(self) -> None:
         assert self._decide(now=_dt(day=10, hour=15), last_notified_at=_dt(day=10, hour=9)) is False
 
-    def test_should_not_renotify_after_midnight_while_still_under_a_day_late(self) -> None:
-        # Regression: due late on day 10 (e.g. afternoon), notified once that
-        # day; checking again after local midnight on day 11 — while still
-        # under 24h late overall — must not re-send the "due" reminder just
-        # because the calendar date rolled over.
+    def test_should_notify_next_am_slot_even_if_not_yet_a_full_day_late(self) -> None:
+        # Due late on day 10 evening (pm slot), notified once that evening;
+        # checking again the next morning (am slot) — even though it's not
+        # yet a full 24h late — must still send the morning reminder. The
+        # twice-daily am/pm cadence applies from the due date onward, not
+        # only once a plant is 1+ day overdue.
         assert (
             self._decide(
                 next_due_at=_dt(day=10, hour=20),
                 now=_dt(day=11, hour=10),
+                last_notified_at=_dt(day=10, hour=20, minute=5),
+            )
+            is True
+        )
+
+    def test_should_not_renotify_within_same_pm_slot_overnight(self) -> None:
+        # Due late on day 10 evening, notified once; a check shortly after
+        # local midnight (still the overnight continuation of that pm slot)
+        # must not re-send.
+        assert (
+            self._decide(
+                next_due_at=_dt(day=10, hour=20),
+                now=_dt(day=11, hour=1),
                 last_notified_at=_dt(day=10, hour=20, minute=5),
             )
             is False
