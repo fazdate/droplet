@@ -126,6 +126,29 @@ def test_should_expose_null_care_instructions_when_species_lacks_them(
     assert plant["notes"] is None
 
 
+def test_should_list_only_plants_due_today_or_overdue(client: TestClient, engine: Engine, frozen_now: dt.datetime) -> None:
+    room_id, species_id = _seed_room_species(engine)
+    overdue_id = _seed_plant(
+        engine, room_id, species_id, nickname="Overdue", photo_path="overdue.jpg",
+        next_due_at=frozen_now - dt.timedelta(days=1),
+    )
+    due_today_id = _seed_plant(
+        engine, room_id, species_id, nickname="Due today", photo_path="due-today.jpg",
+        next_due_at=frozen_now,
+    )
+    _seed_plant(
+        engine, room_id, species_id, nickname="Due tomorrow", photo_path="due-tomorrow.jpg",
+        next_due_at=frozen_now + dt.timedelta(days=1),
+    )
+
+    with freeze_time(frozen_now):
+        response = client.get("/api/plants/due")
+
+    assert response.status_code == 200
+    ids = {p["id"] for p in response.json()}
+    assert ids == {overdue_id, due_today_id}
+
+
 def test_should_404_when_watering_missing_plant(client: TestClient) -> None:
     response = client.post("/api/plants/999/water")
 

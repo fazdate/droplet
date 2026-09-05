@@ -3,6 +3,7 @@
 import datetime as dt
 import uuid
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile
 from sqlalchemy import select
@@ -62,6 +63,25 @@ def list_plants(db: Session = Depends(get_db), settings: Settings = Depends(get_
         )
     ).all()
     return [plant_to_out(plant, now, settings.hemisphere, settings.language) for plant in plants]
+
+
+@router.get("/api/plants/due", response_model=list[PlantOut])
+def list_due_plants(db: Session = Depends(get_db), settings: Settings = Depends(get_settings)) -> list[PlantOut]:
+    """Plants due today (in Droplet's configured TIMEZONE) or already overdue —
+    lets consumers like morning-brief filter on Droplet's side instead of
+    reimplementing this against raw UTC timestamps."""
+    now = dt.datetime.now(dt.timezone.utc)
+    tz = ZoneInfo(settings.timezone)
+    today_local = now.astimezone(tz).date()
+    plants = db.scalars(
+        select(Plant).options(
+            joinedload(Plant.room),
+            joinedload(Plant.species).selectinload(Species.care_texts),
+            joinedload(Plant.species).selectinload(Species.common_names),
+        )
+    ).all()
+    outs = [plant_to_out(plant, now, settings.hemisphere, settings.language) for plant in plants]
+    return [p for p in outs if p.next_due_at is not None and p.next_due_at.astimezone(tz).date() <= today_local]
 
 
 def _record_undo(store: dict, entries: list[dict]) -> str:
