@@ -454,7 +454,8 @@ textarea:focus-visible {
   background: var(--color-surface-muted);
 }
 
-.move-room-button {
+.move-room-button,
+.snooze-button {
   font-size: var(--font-size-subhead);
   padding: 0.5rem 0.9rem;
   border-radius: var(--radius-pill);
@@ -468,6 +469,7 @@ textarea:focus-visible {
 .rename-nickname-button:hover,
 .change-photo-button:hover,
 .move-room-button:hover,
+.snooze-button:hover,
 .modal-close:hover {
   background: var(--color-surface-muted);
 }

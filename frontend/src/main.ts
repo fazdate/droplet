@@ -12,6 +12,7 @@ import {
   lookupSpecies,
   renameRoom,
   resetPlantInterval,
+  snoozePlant,
   undoWatering,
   updatePlantInterval,
   updatePlantNickname,
@@ -80,6 +81,7 @@ function renderCurrentView(): void {
     onChangePhoto: handleChangePhoto,
     onRenameNickname: handleRenameNickname,
     onOpenMoveRoom: handleOpenMoveRoom,
+    onSnoozePlant: handleSnoozePlant,
     expandedRoomId,
     onToggleRoomDetail: handleToggleRoomDetail,
     onRenameRoom: handleRenameRoom,
@@ -421,6 +423,19 @@ async function handleMoveToRoom(plantId: number, roomId: number): Promise<void> 
   moveRoomPlantId = null;
   await refresh();
   showToast(toastRoot, t('toast.plantMoved', { room: room?.name ?? '' }));
+}
+
+async function handleSnoozePlant(plantId: number): Promise<void> {
+  try {
+    await snoozePlant(plantId, 1);
+  } catch (err) {
+    console.error('Failed to snooze plant', err);
+    window.alert(t('error.snoozePlant'));
+    return;
+  }
+
+  await refresh();
+  showToast(toastRoot, t('toast.plantSnoozed'));
 }
 
 async function handleRemovePlant(plantId: number): Promise<void> {

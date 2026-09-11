@@ -28,6 +28,7 @@ const en: Dict = {
   'action.addNickname': 'Add nickname',
   'action.updateNickname': 'Update nickname',
   'action.moveToRoom': 'Move to room',
+  'action.snoozePlant': 'Snooze 1 day',
   'action.moreOptions': 'More options',
   'action.decreaseInterval': 'Water less often',
   'action.increaseInterval': 'Water more often',
@@ -55,6 +56,7 @@ const en: Dict = {
   'toast.roomCreated': 'Room created: {name}',
   'toast.intervalUpdated': 'Watering every {days} days',
   'toast.intervalReset': 'Reset to recommended schedule',
+  'toast.plantSnoozed': 'Reminder snoozed for 1 day',
 
   'error.loadPlants': 'Could not load plants. Is the backend reachable?',
   'error.identify': 'Could not identify this photo. Try again or enter it manually.',
@@ -76,6 +78,7 @@ const en: Dict = {
   'error.undo': 'Could not undo the watering. Please try again.',
   'error.setInterval': 'Could not update the watering interval. Please try again.',
   'error.resetInterval': 'Could not reset the watering interval. Please try again.',
+  'error.snoozePlant': 'Could not snooze this reminder. Please try again.',
 
   'empty.noPlants': 'No plants yet — tap + to add your first one.',
   'summary.attentionOne': '1 plant needs attention',
@@ -154,6 +157,7 @@ const hu: Dict = {
   'action.addNickname': 'Becenév hozzáadása',
   'action.updateNickname': 'Becenév módosítása',
   'action.moveToRoom': 'Áthelyezés másik szobába',
+  'action.snoozePlant': 'Elhalasztás 1 napra',
   'action.moreOptions': 'További lehetőségek',
   'action.decreaseInterval': 'Ritkábban locsolva',
   'action.increaseInterval': 'Gyakrabban locsolva',
@@ -181,6 +185,7 @@ const hu: Dict = {
   'toast.roomCreated': 'Szoba létrehozva: {name}',
   'toast.intervalUpdated': 'Locsolás {days} naponta',
   'toast.intervalReset': 'Visszaállítva az ajánlott ütemezésre',
+  'toast.plantSnoozed': 'Emlékeztető elhalasztva 1 napra',
 
   'error.loadPlants': 'Nem sikerült betölteni a növényeket. Elérhető a szerver?',
   'error.identify': 'Nem sikerült azonosítani a fotót. Próbáld újra, vagy add meg manuálisan.',
@@ -202,6 +207,7 @@ const hu: Dict = {
   'error.undo': 'Nem sikerült visszavonni a locsolást. Próbáld újra.',
   'error.setInterval': 'Nem sikerült frissíteni a locsolás gyakoriságát. Próbáld újra.',
   'error.resetInterval': 'Nem sikerült visszaállítani a locsolás gyakoriságát. Próbáld újra.',
+  'error.snoozePlant': 'Nem sikerült elhalasztani az emlékeztetőt. Próbáld újra.',
 
   'empty.noPlants': 'Még nincs növényed — koppints a + gombra az elsőhöz.',
   'summary.attentionOne': '1 növény figyelmet igényel',

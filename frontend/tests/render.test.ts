@@ -78,6 +78,7 @@ function baseOptions(overrides: Partial<import('../src/render').RenderAppOptions
     onChangePhoto: vi.fn(),
     onRenameNickname: vi.fn(),
     onOpenMoveRoom: vi.fn(),
+    onSnoozePlant: vi.fn(),
     expandedRoomId: null,
     onToggleRoomDetail: vi.fn(),
     onRenameRoom: vi.fn(),
@@ -397,6 +398,25 @@ describe('renderApp', () => {
     container.querySelector<HTMLButtonElement>('[data-rename-nickname="5"]')?.click();
 
     expect(onRenameNickname).toHaveBeenCalledWith(5);
+  });
+
+  it('should_call_onSnoozePlant_when_snooze_button_clicked', () => {
+    const container = document.createElement('div');
+    const onSnoozePlant = vi.fn();
+
+    renderApp(
+      container,
+      baseOptions({
+        rooms: [room({ id: 1 })],
+        plants: [plant({ id: 5, room_id: 1 })],
+        expandedPlantId: 5,
+        onSnoozePlant,
+      }),
+    );
+
+    container.querySelector<HTMLButtonElement>('[data-snooze-plant="5"]')?.click();
+
+    expect(onSnoozePlant).toHaveBeenCalledWith(5);
   });
 
   it('should_not_render_rename_nickname_control_when_detail_is_collapsed', () => {

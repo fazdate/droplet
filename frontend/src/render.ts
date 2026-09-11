@@ -34,6 +34,7 @@ export interface RenderAppOptions {
   onChangePhoto: (plantId: number, file: File) => void;
   onRenameNickname: (plantId: number) => void;
   onOpenMoveRoom: (plantId: number) => void;
+  onSnoozePlant: (plantId: number) => void;
   expandedRoomId: number | null;
   onToggleRoomDetail: (roomId: number) => void;
   onRenameRoom: (roomId: number) => void;
@@ -251,6 +252,7 @@ function renderPlantTile(
     actions.appendChild(renderRenameNicknameControl(plant, options));
     const moveRoomControl = renderMoveRoomControl(plant, options);
     if (moveRoomControl) actions.appendChild(moveRoomControl);
+    actions.appendChild(renderSnoozeControl(plant, options));
     detail.appendChild(actions);
 
     const removeButton = document.createElement('button');
@@ -392,5 +394,26 @@ function renderMoveRoomControl(plant: PlantOut, options: RenderAppOptions): HTML
   button.addEventListener('click', () => options.onOpenMoveRoom(plant.id));
   wrapper.appendChild(button);
 
+  return wrapper;
+}
+
+/**
+ * "Snooze / away" (README "Using the app"): pushes this plant's next reminder
+ * out by a day, same as the "Snooze 1 day" push-notification action button —
+ * this in-app control covers the case where no notification was received (or
+ * the household isn't using Home Assistant push notifications at all).
+ */
+function renderSnoozeControl(plant: PlantOut, options: RenderAppOptions): HTMLElement {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'snooze-control';
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'snooze-button';
+  button.textContent = t('action.snoozePlant');
+  button.dataset.snoozePlant = String(plant.id);
+  button.addEventListener('click', () => options.onSnoozePlant(plant.id));
+
+  wrapper.appendChild(button);
   return wrapper;
 }
