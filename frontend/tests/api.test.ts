@@ -7,6 +7,7 @@ import {
   deletePlant,
   deleteRoom,
   diagnosePlant,
+  fetchHaSensors,
   fetchPlants,
   fetchRooms,
   identifyPhoto,
@@ -20,6 +21,7 @@ import {
   updatePlantNickname,
   updatePlantRoom,
   updatePlantPhoto,
+  updateRoomClimateEntities,
   waterPlant,
   waterRoom,
 } from '../src/api';
@@ -315,5 +317,35 @@ describe('api client', () => {
     mockFetchOnce(null, false, 404);
 
     await expect(deletePlant(5)).rejects.toThrow('Request failed: 404');
+  });
+
+  it('should_fetch_ha_sensors_from_expected_endpoint', async () => {
+    mockFetchOnce({
+      temperature: [{ entity_id: 'sensor.temp', friendly_name: 'Temp', device_class: 'temperature', unit: '°C', state: '21' }],
+      humidity: [],
+    });
+
+    const sensors = await fetchHaSensors();
+
+    expect(fetch).toHaveBeenCalledWith('/api/ha/sensors');
+    expect(sensors.temperature[0].entity_id).toBe('sensor.temp');
+  });
+
+  it('should_throw_when_fetch_ha_sensors_response_not_ok', async () => {
+    mockFetchOnce(null, false, 503);
+
+    await expect(fetchHaSensors()).rejects.toThrow('Request failed: 503');
+  });
+
+  it('should_update_room_climate_entities', async () => {
+    mockFetchOnce({ id: 1, temperature_entity_id: 'sensor.temp', humidity_entity_id: null });
+
+    await updateRoomClimateEntities(1, { temperature_entity_id: 'sensor.temp', humidity_entity_id: null });
+
+    expect(fetch).toHaveBeenCalledWith('/api/rooms/1/climate-entities', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ temperature_entity_id: 'sensor.temp', humidity_entity_id: null }),
+    });
   });
 });

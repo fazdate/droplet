@@ -1,4 +1,5 @@
-"""APScheduler wiring for the 30-min notification tick — plan section 4.8.
+"""APScheduler wiring for the 30-min notification tick — plan section 4.8 —
+plus the climate-aware cadence jobs from CLIMATE_CADENCE_PLAN.md.
 
 Kept separate from app.main so create_app() (used by the whole test suite)
 never starts a background thread; only app.asgi (the real uvicorn entrypoint)
@@ -14,8 +15,10 @@ from sqlalchemy.orm import sessionmaker
 
 from app.clients.ha import HomeAssistantClient
 from app.config import Settings
+from app.services.cadence_recompute import run_cadence_recompute
+from app.services.climate import poll_room_climate
 from app.services.scheduler_job import run_notification_tick
-from app.services.settings_store import set_last_notification_error
+from app.services.settings_store import set_last_climate_error, set_last_notification_error
 
 LOG = logging.getLogger(__name__)
 
@@ -61,10 +64,65 @@ def make_tick_callable(
     return tick
 
 
+def make_climate_poll_callable(*, session_factory: sessionmaker, ha_client: HomeAssistantClient) -> Callable[[], None]:
+    """Reads HA and writes room climate columns only — kept as a separate job
+    (and a separate error field, last_climate_error) from the notification
+    tick and cadence recompute so HA being down for sensor reads can't abort
+    cadence math or pollute /api/health's notification-failure signal."""
+
+    def tick() -> None:
+        session = session_factory()
+        try:
+            poll_room_climate(session, ha_client=ha_client, now=dt.datetime.now(dt.timezone.utc))
+            session.commit()
+        except Exception as exc:
+            LOG.exception("Climate poll failed")
+            try:
+                session.rollback()
+                set_last_climate_error(session, message=str(exc), at=dt.datetime.now(dt.timezone.utc))
+                session.commit()
+            except Exception:
+                LOG.exception("Failed to record climate poll failure")
+        else:
+            try:
+                set_last_climate_error(session, message=None)
+                session.commit()
+            except Exception:
+                LOG.exception("Failed to clear climate poll failure")
+        finally:
+            session.close()
+
+    return tick
+
+
+def make_cadence_recompute_callable(*, session_factory: sessionmaker, settings: Settings) -> Callable[[], None]:
+    """Daily batch recompute of next_due_at from current month + current
+    per-room climate factor. Run once a day (not every 30 min like the
+    climate poll): should_notify_plant compares next_due_at to now, so
+    frequent rewrites would make the UI's due/overdue badges flicker."""
+
+    def tick() -> None:
+        session = session_factory()
+        try:
+            run_cadence_recompute(session, now=dt.datetime.now(dt.timezone.utc), hemisphere=settings.hemisphere)
+            session.commit()
+        except Exception:
+            LOG.exception("Cadence recompute failed")
+            session.rollback()
+        finally:
+            session.close()
+
+    return tick
+
+
 def build_scheduler(*, session_factory: sessionmaker, settings: Settings) -> BackgroundScheduler:
     ha_client = HomeAssistantClient(base_url=settings.ha_base_url, token=settings.ha_long_lived_token)
     tick = make_tick_callable(session_factory=session_factory, ha_client=ha_client, settings=settings)
+    climate_poll_tick = make_climate_poll_callable(session_factory=session_factory, ha_client=ha_client)
+    cadence_recompute_tick = make_cadence_recompute_callable(session_factory=session_factory, settings=settings)
 
     scheduler = BackgroundScheduler()
     scheduler.add_job(tick, "interval", minutes=30, id="notification_tick")
+    scheduler.add_job(climate_poll_tick, "interval", minutes=30, id="climate_poll")
+    scheduler.add_job(cadence_recompute_tick, "cron", hour=3, id="cadence_recompute")
     return scheduler

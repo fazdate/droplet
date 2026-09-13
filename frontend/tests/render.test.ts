@@ -5,7 +5,21 @@ import { renderApp, sortRoomsByUrgency, sortPlantsByUrgency } from '../src/rende
 const now = new Date('2026-08-17T09:00:00Z');
 
 function room(overrides: Partial<RoomSummary>): RoomSummary {
-  return { id: 1, name: 'Kitchen', sort_order: 0, plant_count: 0, due_count: 0, overdue_count: 0, ...overrides };
+  return {
+    id: 1,
+    name: 'Kitchen',
+    sort_order: 0,
+    plant_count: 0,
+    due_count: 0,
+    overdue_count: 0,
+    temperature_entity_id: null,
+    humidity_entity_id: null,
+    climate_temp_c: null,
+    climate_humidity: null,
+    climate_vpd_kpa: null,
+    climate_updated_at: null,
+    ...overrides,
+  };
 }
 
 function plant(overrides: Partial<PlantOut>): PlantOut {
@@ -82,6 +96,7 @@ function baseOptions(overrides: Partial<import('../src/render').RenderAppOptions
     expandedRoomId: null,
     onToggleRoomDetail: vi.fn(),
     onRenameRoom: vi.fn(),
+    onOpenRoomSettings: vi.fn(),
     photoPreview: null,
     onOpenPhotoPreview: vi.fn(),
     onClosePhotoPreview: vi.fn(),
@@ -663,5 +678,24 @@ describe('renderApp', () => {
     container.querySelector<HTMLButtonElement>('[data-rename-room="4"]')?.click();
 
     expect(onRenameRoom).toHaveBeenCalledWith(4);
+  });
+
+  it('should_render_room_settings_button_when_room_detail_expanded', () => {
+    const container = document.createElement('div');
+
+    renderApp(container, baseOptions({ rooms: [room({ id: 4 })], expandedRoomId: 4 }));
+
+    expect(container.querySelector('[data-room-settings="4"]')).not.toBeNull();
+  });
+
+  it('should_call_onOpenRoomSettings_when_room_settings_button_clicked', () => {
+    const container = document.createElement('div');
+    const onOpenRoomSettings = vi.fn();
+
+    renderApp(container, baseOptions({ rooms: [room({ id: 4 })], expandedRoomId: 4, onOpenRoomSettings }));
+
+    container.querySelector<HTMLButtonElement>('[data-room-settings="4"]')?.click();
+
+    expect(onOpenRoomSettings).toHaveBeenCalledWith(4);
   });
 });

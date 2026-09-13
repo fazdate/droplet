@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import datetime as dt
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from app.languages import DEFAULT_LANGUAGE
@@ -25,6 +25,22 @@ class Room(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    # Home Assistant entity ids for this room's climate sensors (e.g.
+    # "sensor.living_room_temperature") — CLIMATE_CADENCE_PLAN.md. Both null
+    # means "no sensors assigned", which keeps exactly today's calendar-only
+    # cadence behavior (the feature's kill switch, deliberately without a
+    # separate env flag).
+    temperature_entity_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    humidity_entity_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Smoothed 24h EWMA of per-sample VPD (kPa) — the only climate column that
+    # feeds compute_effective_interval. Aggregated on VPD, never on raw
+    # temperature/humidity (see app.services.schedule.climate_factor_from_vpd).
+    climate_vpd_kpa: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # Latest instantaneous sensor readings, for display only.
+    climate_temp_c: Mapped[float | None] = mapped_column(Float, nullable=True)
+    climate_humidity: Mapped[float | None] = mapped_column(Float, nullable=True)
+    climate_updated_at: Mapped[dt.datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
     plants: Mapped[list["Plant"]] = relationship(back_populates="room")
 

@@ -38,6 +38,7 @@ export interface RenderAppOptions {
   expandedRoomId: number | null;
   onToggleRoomDetail: (roomId: number) => void;
   onRenameRoom: (roomId: number) => void;
+  onOpenRoomSettings: (roomId: number) => void;
   photoPreview: PlantPhotoPreview | null;
   onOpenPhotoPreview: (preview: PlantPhotoPreview) => void;
   onClosePhotoPreview: () => void;
@@ -164,6 +165,18 @@ function renderRoomDetail(roomId: number, options: RenderAppOptions): HTMLElemen
   renameButton.dataset.renameRoom = String(roomId);
   renameButton.addEventListener('click', () => options.onRenameRoom(roomId));
   detail.appendChild(renameButton);
+
+  // "Room settings" (CLIMATE_CADENCE_PLAN.md): assigns this room's HA
+  // temperature/humidity sensors for the climate-aware watering cadence —
+  // tucked behind the same "⋮" menu as "Rename room" since it's likewise a
+  // rarely-touched, per-room setting.
+  const settingsButton = document.createElement('button');
+  settingsButton.type = 'button';
+  settingsButton.className = 'room-settings-button';
+  settingsButton.textContent = t('action.roomSettings');
+  settingsButton.dataset.roomSettings = String(roomId);
+  settingsButton.addEventListener('click', () => options.onOpenRoomSettings(roomId));
+  detail.appendChild(settingsButton);
 
   return detail;
 }

@@ -110,3 +110,85 @@ def test_should_reject_deleting_room_with_plants(client: TestClient, engine: Eng
     assert response.status_code == 409
     with Session(engine) as session:
         assert session.get(Room, room_id) is not None
+
+
+def test_room_out_should_include_climate_fields(client: TestClient) -> None:
+    created = client.post("/api/rooms", json={"name": "Balcony"}).json()
+
+    for field in (
+        "temperature_entity_id",
+        "humidity_entity_id",
+        "climate_temp_c",
+        "climate_humidity",
+        "climate_vpd_kpa",
+        "climate_updated_at",
+    ):
+        assert field in created
+        assert created[field] is None
+
+
+def test_should_set_climate_entities(client: TestClient) -> None:
+    created = client.post("/api/rooms", json={"name": "Balcony"}).json()
+
+    response = client.post(
+        f"/api/rooms/{created['id']}/climate-entities",
+        json={"temperature_entity_id": "sensor.balcony_temp", "humidity_entity_id": "sensor.balcony_humidity"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["temperature_entity_id"] == "sensor.balcony_temp"
+    assert body["humidity_entity_id"] == "sensor.balcony_humidity"
+
+
+def test_should_clear_climate_entities_with_null(client: TestClient) -> None:
+    created = client.post("/api/rooms", json={"name": "Balcony"}).json()
+    client.post(
+        f"/api/rooms/{created['id']}/climate-entities",
+        json={"temperature_entity_id": "sensor.balcony_temp", "humidity_entity_id": "sensor.balcony_humidity"},
+    )
+
+    response = client.post(
+        f"/api/rooms/{created['id']}/climate-entities",
+        json={"temperature_entity_id": None, "humidity_entity_id": None},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["temperature_entity_id"] is None
+    assert body["humidity_entity_id"] is None
+
+
+def test_should_reject_malformed_entity_id(client: TestClient) -> None:
+    created = client.post("/api/rooms", json={"name": "Balcony"}).json()
+
+    response = client.post(
+        f"/api/rooms/{created['id']}/climate-entities",
+        json={"temperature_entity_id": "not-an-entity-id", "humidity_entity_id": None},
+    )
+
+    assert response.status_code == 422
+
+
+def test_should_404_when_setting_climate_entities_on_missing_room(client: TestClient) -> None:
+    response = client.post(
+        "/api/rooms/999/climate-entities",
+        json={"temperature_entity_id": None, "humidity_entity_id": None},
+    )
+
+    assert response.status_code == 404
+
+
+def test_room_summary_out_should_include_climate_fields(client: TestClient) -> None:
+    created = client.post("/api/rooms", json={"name": "Balcony"}).json()
+    client.post(
+        f"/api/rooms/{created['id']}/climate-entities",
+        json={"temperature_entity_id": "sensor.balcony_temp", "humidity_entity_id": "sensor.balcony_humidity"},
+    )
+
+    response = client.get("/api/rooms")
+
+    assert response.status_code == 200
+    balcony = next(r for r in response.json() if r["id"] == created["id"])
+    assert balcony["temperature_entity_id"] == "sensor.balcony_temp"
+    assert balcony["humidity_entity_id"] == "sensor.balcony_humidity"

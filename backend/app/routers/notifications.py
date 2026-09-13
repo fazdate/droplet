@@ -12,6 +12,7 @@ from app.config import Settings
 from app.deps import get_db, get_settings
 from app.models.orm import Plant, Room
 from app.schemas import AwayRequest, HaActionRequest, SnoozeRequest
+from app.services.climate import climate_factor_for_room
 from app.services.settings_store import set_away_until
 from app.services.watering import water_plant
 
@@ -77,9 +78,12 @@ def ha_action(
         room = db.get(Room, room_id)
         if room is None:
             raise HTTPException(status_code=404, detail="Room not found")
+        climate_factor = climate_factor_for_room(room, now)
         plants = db.scalars(select(Plant).where(Plant.room_id == room_id)).all()
         for plant in plants:
-            water_plant(db, plant, now=now, source="notification", hemisphere=settings.hemisphere)
+            water_plant(
+                db, plant, now=now, source="notification", hemisphere=settings.hemisphere, climate_factor=climate_factor
+            )
         db.flush()
         _clear_notification_tags(settings, [payload.tag or f"room-{room_id}"])
         return {"applied": action}
@@ -89,7 +93,14 @@ def ha_action(
         plant = db.get(Plant, plant_id)
         if plant is None:
             raise HTTPException(status_code=404, detail="Plant not found")
-        water_plant(db, plant, now=now, source="notification", hemisphere=settings.hemisphere)
+        water_plant(
+            db,
+            plant,
+            now=now,
+            source="notification",
+            hemisphere=settings.hemisphere,
+            climate_factor=climate_factor_for_room(plant.room, now),
+        )
         db.flush()
         _clear_notification_tags(settings, [payload.tag or f"plant-{plant_id}"])
         return {"applied": action}

@@ -1,8 +1,12 @@
 """Pydantic request/response schemas for the API."""
 
 import datetime as dt
+import re
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+
+# Home Assistant entity id shape, e.g. "sensor.living_room_temperature".
+_ENTITY_ID_PATTERN = re.compile(r"^[a-z_]+\.[a-z0-9_]+$")
 
 
 class RoomCreate(BaseModel):
@@ -15,6 +19,12 @@ class RoomOut(BaseModel):
     id: int
     name: str
     sort_order: int
+    temperature_entity_id: str | None
+    humidity_entity_id: str | None
+    climate_temp_c: float | None
+    climate_humidity: float | None
+    climate_vpd_kpa: float | None
+    climate_updated_at: dt.datetime | None
 
 
 class RoomSummaryOut(BaseModel):
@@ -24,6 +34,37 @@ class RoomSummaryOut(BaseModel):
     plant_count: int
     due_count: int
     overdue_count: int
+    temperature_entity_id: str | None
+    humidity_entity_id: str | None
+    climate_temp_c: float | None
+    climate_humidity: float | None
+    climate_vpd_kpa: float | None
+    climate_updated_at: dt.datetime | None
+
+
+class RoomClimateEntitiesUpdate(BaseModel):
+    temperature_entity_id: str | None = None
+    humidity_entity_id: str | None = None
+
+    @field_validator("temperature_entity_id", "humidity_entity_id")
+    @classmethod
+    def _validate_entity_id(cls, value: str | None) -> str | None:
+        if value is not None and not _ENTITY_ID_PATTERN.match(value):
+            raise ValueError("Invalid Home Assistant entity id")
+        return value
+
+
+class SensorInfoOut(BaseModel):
+    entity_id: str
+    friendly_name: str
+    device_class: str
+    unit: str | None
+    state: str
+
+
+class HaSensorsOut(BaseModel):
+    temperature: list[SensorInfoOut]
+    humidity: list[SensorInfoOut]
 
 
 class PlantOut(BaseModel):

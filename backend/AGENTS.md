@@ -22,7 +22,12 @@ Wikipedia clients), and Home Assistant notification/webhook integration.
   `clients/` (outbound HTTP to the AI provider/Perenual/Wikipedia/Home Assistant)
 - `schemas.py` — Pydantic request/response models; `presenters.py` — maps ORM/domain objects to schemas
 - `config.py` — env var loading (backed by root `.env`); `db.py` — SQLite engine/session setup
-- `scheduler.py` — background job that computes due waterings and triggers HA notifications
+- `scheduler.py` — background jobs: the notification tick, the 30-min HA climate-sensor poll
+  (`climate_poll`), and the daily cadence recompute (`cadence_recompute`) — see
+  CLIMATE_CADENCE_PLAN.md
+- `services/climate.py` — reads HA temperature/humidity sensors into each `Room`'s smoothed VPD
+  (EWMA) and derives the per-room climate cadence factor; `services/cadence_recompute.py` — daily
+  batch job applying current month + current climate factor to every plant's `next_due_at`
 - `i18n.py` / `species_names.py` — localized plant/species name lookups
 - Every external service (AI provider, Wikipedia, Perenual, Home Assistant) must stay mocked in tests
   (`respx`) so `pytest -q` runs fully offline without real API keys

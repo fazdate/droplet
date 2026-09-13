@@ -8,8 +8,10 @@ from sqlalchemy.orm import Session
 from app.models.orm import Base
 from app.services.settings_store import (
     get_away_until,
+    get_last_climate_error,
     get_last_notification_error,
     set_away_until,
+    set_last_climate_error,
     set_last_notification_error,
 )
 
@@ -69,3 +71,36 @@ def test_should_clear_last_notification_error_when_message_is_none() -> None:
         set_last_notification_error(session, message=None)
 
         assert get_last_notification_error(session) is None
+
+
+def test_should_return_none_when_no_climate_error_recorded() -> None:
+    with _session() as session:
+        assert get_last_climate_error(session) is None
+
+
+def test_should_round_trip_last_climate_error() -> None:
+    with _session() as session:
+        at = dt.datetime(2026, 8, 18, 9, 0, tzinfo=dt.timezone.utc)
+
+        set_last_climate_error(session, message="HA unreachable", at=at)
+
+        assert get_last_climate_error(session) == {"message": "HA unreachable", "at": at.isoformat()}
+
+
+def test_should_clear_last_climate_error_when_message_is_none() -> None:
+    with _session() as session:
+        set_last_climate_error(session, message="boom", at=dt.datetime(2026, 8, 18, tzinfo=dt.timezone.utc))
+
+        set_last_climate_error(session, message=None)
+
+        assert get_last_climate_error(session) is None
+
+
+def test_last_climate_error_should_be_independent_of_last_notification_error() -> None:
+    with _session() as session:
+        set_last_notification_error(session, message="notification boom", at=dt.datetime(2026, 8, 18, tzinfo=dt.timezone.utc))
+
+        set_last_climate_error(session, message="climate boom", at=dt.datetime(2026, 8, 18, tzinfo=dt.timezone.utc))
+
+        assert get_last_notification_error(session)["message"] == "notification boom"
+        assert get_last_climate_error(session)["message"] == "climate boom"

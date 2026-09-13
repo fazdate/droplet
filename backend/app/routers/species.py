@@ -20,6 +20,7 @@ from app.deps import get_ai_client, get_db, get_http_client, get_perenual_client
 from app.languages import DEFAULT_LANGUAGE
 from app.models.orm import Plant, Room, Species, SpeciesCommonName
 from app.presenters import plant_to_out
+from app.services.climate import climate_factor_for_room
 from app.schemas import (
     IdentifyCandidateOut,
     IdentifyResponse,
@@ -262,4 +263,6 @@ def create_plant_endpoint(
     db.flush()
     db.refresh(plant)
 
-    return plant_to_out(plant, now, settings.hemisphere, settings.language)
+    return plant_to_out(
+        plant, now, settings.hemisphere, settings.language, climate_factor=climate_factor_for_room(room, now)
+    )

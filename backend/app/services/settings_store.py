@@ -14,6 +14,8 @@ from app.models.orm import Setting
 _AWAY_UNTIL_KEY = "away_until"
 _LAST_NOTIFICATION_ERROR_KEY = "last_notification_error"
 _LAST_NOTIFICATION_ERROR_AT_KEY = "last_notification_error_at"
+_LAST_CLIMATE_ERROR_KEY = "last_climate_error"
+_LAST_CLIMATE_ERROR_AT_KEY = "last_climate_error_at"
 
 
 def _set_or_clear(session: Session, key: str, value: str | None) -> None:
@@ -56,4 +58,22 @@ def set_last_notification_error(session: Session, *, message: str | None, at: dt
     """Record a notification-tick failure, or clear it (pass message=None) after a success."""
     _set_or_clear(session, _LAST_NOTIFICATION_ERROR_KEY, message)
     _set_or_clear(session, _LAST_NOTIFICATION_ERROR_AT_KEY, at.isoformat() if at is not None else None)
+    session.flush()
+
+
+def get_last_climate_error(session: Session) -> dict[str, str] | None:
+    """Mirrors get_last_notification_error, but for the climate-poll job
+    (CLIMATE_CADENCE_PLAN.md) — kept separate so HA being unreachable for
+    sensor reads doesn't pollute /api/health's notification-failure signal."""
+    message_row = session.get(Setting, _LAST_CLIMATE_ERROR_KEY)
+    if message_row is None:
+        return None
+    at_row = session.get(Setting, _LAST_CLIMATE_ERROR_AT_KEY)
+    return {"message": message_row.value, "at": at_row.value if at_row is not None else None}
+
+
+def set_last_climate_error(session: Session, *, message: str | None, at: dt.datetime | None = None) -> None:
+    """Record a climate-poll failure, or clear it (pass message=None) after a success."""
+    _set_or_clear(session, _LAST_CLIMATE_ERROR_KEY, message)
+    _set_or_clear(session, _LAST_CLIMATE_ERROR_AT_KEY, at.isoformat() if at is not None else None)
     session.flush()

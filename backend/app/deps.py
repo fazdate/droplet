@@ -7,6 +7,7 @@ from fastapi import Request
 from sqlalchemy.orm import Session
 
 from app.clients.ai import AiVisionClient
+from app.clients.ha import HomeAssistantClient
 from app.clients.perenual import PerenualClient
 from app.config import Settings
 
@@ -43,6 +44,13 @@ def get_diagnose_ai_client(request: Request) -> AiVisionClient:
 
 def get_perenual_client(request: Request) -> PerenualClient:
     return request.app.state.perenual_client
+
+
+def get_ha_client(request: Request) -> HomeAssistantClient:
+    """The HA client is otherwise only built inside app.scheduler; exposed
+    here too so the /api/ha/sensors discovery endpoint (CLIMATE_CADENCE_PLAN.md)
+    can use the same client without importing the scheduler module."""
+    return request.app.state.ha_client
 
 
 def get_http_client(request: Request) -> httpx.AsyncClient:

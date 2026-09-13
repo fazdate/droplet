@@ -15,6 +15,7 @@ from app.deps import get_db, get_diagnose_ai_client, get_settings
 from app.models.orm import Plant, Room, Species, WateringEvent
 from app.presenters import plant_to_out
 from app.schemas import DiagnoseIssueOut, DiagnoseResponse, PlantOut, PlantUpdate, UndoRequest, UndoResult, WaterResult
+from app.services.climate import climate_factor_for_room, room_climate_factors
 from app.services.photo_storage import save_upload
 from app.services.schedule import compute_effective_interval, compute_next_due_at, resolve_base_interval
 from app.services.thumbnails import thumbnail_filename, thumbnails_dir
@@ -26,10 +27,15 @@ router = APIRouter(tags=["plants"])
 UNDO_WINDOW = dt.timedelta(minutes=5)
 
 
-def _recompute_next_due(plant: Plant, hemisphere: str) -> None:
+def _recompute_next_due(plant: Plant, hemisphere: str, *, now: dt.datetime, climate_factor: float = 1.0) -> None:
     """Recomputes next_due_at from the plant's last watering (if any) whenever
     the interval override or seasonal-adjust flag changes — plan 4.6:
-    "Changing the cadence recomputes next_due_at from last_watered_at immediately"."""
+    "Changing the cadence recomputes next_due_at from last_watered_at immediately".
+
+    Uses the *current* month/climate at compute time, not the month the plant
+    was last watered — editing an override in July for a plant last watered in
+    January should apply July's factors, matching watering.py/presenters.py
+    (see CLIMATE_CADENCE_PLAN.md)."""
     if plant.last_watered_at is None:
         return
     base_interval = resolve_base_interval(
@@ -38,10 +44,11 @@ def _recompute_next_due(plant: Plant, hemisphere: str) -> None:
     )
     effective_interval = compute_effective_interval(
         base_interval_days=base_interval,
-        month=plant.last_watered_at.month,
+        month=now.month,
         profile=plant.species.seasonal_profile,
         hemisphere=hemisphere,
         seasonal_adjust_enabled=plant.seasonal_adjust_enabled,
+        climate_factor=climate_factor,
     )
     plant.next_due_at = compute_next_due_at(
         last_watered_at=plant.last_watered_at, effective_interval_days=effective_interval
@@ -62,7 +69,11 @@ def list_plants(db: Session = Depends(get_db), settings: Settings = Depends(get_
             joinedload(Plant.species).selectinload(Species.common_names),
         )
     ).all()
-    return [plant_to_out(plant, now, settings.hemisphere, settings.language) for plant in plants]
+    factors = room_climate_factors(db, now=now)
+    return [
+        plant_to_out(plant, now, settings.hemisphere, settings.language, climate_factor=factors.get(plant.room_id, 1.0))
+        for plant in plants
+    ]
 
 
 @router.get("/api/plants/due", response_model=list[PlantOut])
@@ -80,7 +91,11 @@ def list_due_plants(db: Session = Depends(get_db), settings: Settings = Depends(
             joinedload(Plant.species).selectinload(Species.common_names),
         )
     ).all()
-    outs = [plant_to_out(plant, now, settings.hemisphere, settings.language) for plant in plants]
+    factors = room_climate_factors(db, now=now)
+    outs = [
+        plant_to_out(plant, now, settings.hemisphere, settings.language, climate_factor=factors.get(plant.room_id, 1.0))
+        for plant in plants
+    ]
     return [p for p in outs if p.next_due_at is not None and p.next_due_at.astimezone(tz).date() <= today_local]
 
 
@@ -91,12 +106,12 @@ def _record_undo(store: dict, entries: list[dict]) -> str:
 
 
 def _water_and_capture(
-    session: Session, plant: Plant, *, now: dt.datetime, source: str, hemisphere: str
+    session: Session, plant: Plant, *, now: dt.datetime, source: str, hemisphere: str, climate_factor: float = 1.0
 ) -> dict:
     prev_last_watered_at = plant.last_watered_at
     prev_next_due_at = plant.next_due_at
     prev_last_notified_at = plant.last_notified_at
-    event = water_plant(session, plant, now=now, source=source, hemisphere=hemisphere)
+    event = water_plant(session, plant, now=now, source=source, hemisphere=hemisphere, climate_factor=climate_factor)
     return {
         "plant_id": plant.id,
         "event_id": event.id,
@@ -118,7 +133,10 @@ def water_single_plant(
         raise not_found("Plant")
 
     now = dt.datetime.now(dt.timezone.utc)
-    entry = _water_and_capture(db, plant, now=now, source="app_single", hemisphere=settings.hemisphere)
+    climate_factor = climate_factor_for_room(plant.room, now)
+    entry = _water_and_capture(
+        db, plant, now=now, source="app_single", hemisphere=settings.hemisphere, climate_factor=climate_factor
+    )
     db.flush()
 
     token = _record_undo(_get_undo_store(request), [entry])
@@ -137,9 +155,12 @@ def water_room(
         raise not_found("Room")
 
     now = dt.datetime.now(dt.timezone.utc)
+    climate_factor = climate_factor_for_room(room, now)
     plants = db.scalars(select(Plant).where(Plant.room_id == room_id)).all()
     entries = [
-        _water_and_capture(db, plant, now=now, source="app_room", hemisphere=settings.hemisphere)
+        _water_and_capture(
+            db, plant, now=now, source="app_room", hemisphere=settings.hemisphere, climate_factor=climate_factor
+        )
         for plant in plants
     ]
     db.flush()
@@ -209,12 +230,17 @@ def update_plant(
         plant.seasonal_adjust_enabled = payload.seasonal_adjust_enabled
         cadence_changed = True
 
+    now = dt.datetime.now(dt.timezone.utc)
     if cadence_changed:
-        _recompute_next_due(plant, settings.hemisphere)
+        _recompute_next_due(
+            plant, settings.hemisphere, now=now, climate_factor=climate_factor_for_room(plant.room, now)
+        )
 
     db.flush()
     db.refresh(plant)
-    return plant_to_out(plant, dt.datetime.now(dt.timezone.utc), settings.hemisphere, settings.language)
+    return plant_to_out(
+        plant, now, settings.hemisphere, settings.language, climate_factor=climate_factor_for_room(plant.room, now)
+    )
 
 
 @router.post("/api/plants/{plant_id}/photo", response_model=PlantOut)
@@ -245,7 +271,10 @@ async def update_plant_photo(
     (photos_dir / old_photo_id).unlink(missing_ok=True)
     (thumbnails_dir(photos_dir) / thumbnail_filename(old_photo_id)).unlink(missing_ok=True)
 
-    return plant_to_out(plant, dt.datetime.now(dt.timezone.utc), settings.hemisphere, settings.language)
+    now = dt.datetime.now(dt.timezone.utc)
+    return plant_to_out(
+        plant, now, settings.hemisphere, settings.language, climate_factor=climate_factor_for_room(plant.room, now)
+    )
 
 
 @router.post("/api/plants/{plant_id}/diagnose", response_model=DiagnoseResponse)
@@ -316,8 +345,11 @@ def reset_interval_override(
     if plant is None:
         raise not_found("Plant")
 
+    now = dt.datetime.now(dt.timezone.utc)
     plant.watering_interval_days_override = None
-    _recompute_next_due(plant, settings.hemisphere)
+    _recompute_next_due(plant, settings.hemisphere, now=now, climate_factor=climate_factor_for_room(plant.room, now))
     db.flush()
     db.refresh(plant)
-    return plant_to_out(plant, dt.datetime.now(dt.timezone.utc), settings.hemisphere, settings.language)
+    return plant_to_out(
+        plant, now, settings.hemisphere, settings.language, climate_factor=climate_factor_for_room(plant.room, now)
+    )

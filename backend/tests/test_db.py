@@ -96,3 +96,35 @@ def test_should_backfill_nickname_is_custom_column_on_pre_existing_database(tmp_
     with session_scope(engine) as session:
         plant = session.query(Plant).filter_by(nickname="Basil").one()
         assert plant.nickname_is_custom is False
+
+
+def test_should_backfill_climate_columns_on_pre_existing_room_table(tmp_path) -> None:
+    """Simulates a real deployment's SQLite file created before the climate
+    columns existed (CLIMATE_CADENCE_PLAN.md) — init_db must patch them in via
+    ALTER TABLE, same as the nickname_is_custom backfill above."""
+    from app.models.orm import Room
+
+    db_path = tmp_path / "test.sqlite3"
+    engine = create_db_engine(f"sqlite:///{db_path}")
+    init_db(engine)
+
+    with engine.begin() as conn:
+        for column in (
+            "temperature_entity_id",
+            "humidity_entity_id",
+            "climate_vpd_kpa",
+            "climate_temp_c",
+            "climate_humidity",
+            "climate_updated_at",
+        ):
+            conn.exec_driver_sql(f"ALTER TABLE room DROP COLUMN {column}")
+        conn.exec_driver_sql("INSERT INTO room (name, sort_order) VALUES ('Kitchen', 0)")
+
+    init_db(engine)
+
+    with session_scope(engine) as session:
+        room = session.query(Room).filter_by(name="Kitchen").one()
+        assert room.temperature_entity_id is None
+        assert room.humidity_entity_id is None
+        assert room.climate_vpd_kpa is None
+        assert room.climate_updated_at is None

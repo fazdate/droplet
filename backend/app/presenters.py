@@ -9,7 +9,9 @@ from app.schemas import PlantOut
 from app.services.schedule import compute_effective_interval
 
 
-def plant_to_out(plant: Plant, now: dt.datetime, hemisphere: str, language: str = DEFAULT_LANGUAGE) -> PlantOut:
+def plant_to_out(
+    plant: Plant, now: dt.datetime, hemisphere: str, language: str = DEFAULT_LANGUAGE, climate_factor: float = 1.0
+) -> PlantOut:
     light, soil, notes = plant.species.care_text_for(language)
     common_name = plant.species.common_name_for(language)
     recommended_interval_days = compute_effective_interval(
@@ -18,6 +20,7 @@ def plant_to_out(plant: Plant, now: dt.datetime, hemisphere: str, language: str 
         profile=plant.species.seasonal_profile,
         hemisphere=hemisphere,
         seasonal_adjust_enabled=plant.seasonal_adjust_enabled,
+        climate_factor=climate_factor,
     )
     return PlantOut(
         id=plant.id,

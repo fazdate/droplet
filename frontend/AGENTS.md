@@ -23,6 +23,10 @@ notification/toast handling. No frontend framework — hand-written DOM renderin
 - `addPlantFlow.ts` / `addPlantUi.ts` — the add-plant wizard (photo → AI identify → confirm);
   keep flow/state logic in `addPlantFlow.ts` and DOM wiring in `addPlantUi.ts`
 - `cadenceEditor.ts` — watering interval editing UI; `careInfo.ts` — plant care info display
+- `roomSettingsUi.ts` — "Room settings" modal (CLIMATE_CADENCE_PLAN.md): assigns a room's Home
+  Assistant temperature/humidity sensors for the climate-aware watering cadence, following
+  `moveRoomUi.ts` as its lightweight-modal template
+- `moveRoomUi.ts` — "Move to room" popup
 - `imageResize.ts` — client-side photo resize before upload (keeps uploads small)
 - `wakeLock.ts` — Screen Wake Lock API wrapper; `i18n.ts` — UI string localization
 - `format.ts` — shared date/number formatting helpers; `toast.ts` — transient UI notifications

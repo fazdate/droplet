@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_db
 from app.models.orm import Plant, Room
-from app.schemas import RoomCreate, RoomOut, RoomSummaryOut
+from app.schemas import RoomClimateEntitiesUpdate, RoomCreate, RoomOut, RoomSummaryOut
 from app.utils.errors import not_found
 
 router = APIRouter(prefix="/api/rooms", tags=["rooms"])
@@ -37,6 +37,24 @@ def rename_room(room_id: int, payload: RoomCreate, db: Session = Depends(get_db)
         db.flush()
     except IntegrityError as exc:
         raise HTTPException(status_code=409, detail="Room name already exists") from exc
+    db.refresh(room)
+    return room
+
+
+@router.post("/{room_id}/climate-entities", response_model=RoomOut)
+def update_room_climate_entities(room_id: int, payload: RoomClimateEntitiesUpdate, db: Session = Depends(get_db)) -> Room:
+    """Assigns (or clears, via null) this room's temperature/humidity sensors
+    for the climate-aware watering cadence (CLIMATE_CADENCE_PLAN.md). A
+    separate endpoint from rename_room above since that takes RoomCreate
+    (name only) — this always replaces both entity ids together, matching the
+    room settings modal's two dropdowns being submitted as a pair."""
+    room = db.get(Room, room_id)
+    if room is None:
+        raise not_found("Room")
+
+    room.temperature_entity_id = payload.temperature_entity_id
+    room.humidity_entity_id = payload.humidity_entity_id
+    db.flush()
     db.refresh(room)
     return room
 
@@ -97,6 +115,12 @@ def list_rooms(db: Session = Depends(get_db)) -> list[RoomSummaryOut]:
             plant_count=counts.get(room.id, 0),
             due_count=due_counts.get(room.id, 0),
             overdue_count=overdue_counts.get(room.id, 0),
+            temperature_entity_id=room.temperature_entity_id,
+            humidity_entity_id=room.humidity_entity_id,
+            climate_temp_c=room.climate_temp_c,
+            climate_humidity=room.climate_humidity,
+            climate_vpd_kpa=room.climate_vpd_kpa,
+            climate_updated_at=room.climate_updated_at,
         )
         for room in rooms
     ]

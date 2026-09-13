@@ -24,6 +24,8 @@ const en: Dict = {
   'action.removePlant': 'Remove plant',
   'action.removeRoom': 'Remove room',
   'action.renameRoom': 'Rename room',
+  'action.roomSettings': 'Room settings',
+  'action.save': 'Save',
   'action.changePhoto': 'Change photo',
   'action.addNickname': 'Add nickname',
   'action.updateNickname': 'Update nickname',
@@ -57,6 +59,7 @@ const en: Dict = {
   'toast.intervalUpdated': 'Watering every {days} days',
   'toast.intervalReset': 'Reset to recommended schedule',
   'toast.plantSnoozed': 'Reminder snoozed for 1 day',
+  'toast.roomSettingsSaved': 'Room sensors updated',
 
   'error.loadPlants': 'Could not load plants. Is the backend reachable?',
   'error.identify': 'Could not identify this photo. Try again or enter it manually.',
@@ -137,6 +140,16 @@ const en: Dict = {
   'diagnose.done': 'Done',
   'diagnose.pickPlantPrompt': 'Which plant is this for?',
   'diagnose.noPlantsYet': 'You do not have any plants yet — add one first.',
+
+  'roomSettings.title': 'Room settings for {name}',
+  'roomSettings.notAssigned': 'Not assigned',
+  'roomSettings.temperatureLabel': 'Temperature sensor',
+  'roomSettings.humidityLabel': 'Humidity sensor',
+  'roomSettings.loadingSensors': 'Loading sensors…',
+  'roomSettings.loadError': 'Could not load Home Assistant sensors. Is Home Assistant reachable?',
+  'roomSettings.saveError': 'Could not update this room’s sensors. Please try again.',
+  'roomSettings.readingSummary': 'now {temp}°C / {humidity}%, 24h avg {vpd} kPa → cadence ×{factor}',
+  'roomSettings.noReadingYet': 'No sensor reading yet — this can take up to 30 minutes after assigning a sensor.',
 };
 
 const hu: Dict = {
@@ -153,6 +166,8 @@ const hu: Dict = {
   'action.removePlant': 'Növény eltávolítása',
   'action.removeRoom': 'Szoba eltávolítása',
   'action.renameRoom': 'Szoba átnevezése',
+  'action.roomSettings': 'Szoba beállításai',
+  'action.save': 'Mentés',
   'action.changePhoto': 'Fotó cseréje',
   'action.addNickname': 'Becenév hozzáadása',
   'action.updateNickname': 'Becenév módosítása',
@@ -186,6 +201,7 @@ const hu: Dict = {
   'toast.intervalUpdated': 'Locsolás {days} naponta',
   'toast.intervalReset': 'Visszaállítva az ajánlott ütemezésre',
   'toast.plantSnoozed': 'Emlékeztető elhalasztva 1 napra',
+  'toast.roomSettingsSaved': 'Szoba érzékelői frissítve',
 
   'error.loadPlants': 'Nem sikerült betölteni a növényeket. Elérhető a szerver?',
   'error.identify': 'Nem sikerült azonosítani a fotót. Próbáld újra, vagy add meg manuálisan.',
@@ -266,6 +282,16 @@ const hu: Dict = {
   'diagnose.done': 'Kész',
   'diagnose.pickPlantPrompt': 'Melyik növényről van szó?',
   'diagnose.noPlantsYet': 'Még nincs növényed — előbb adj hozzá egyet.',
+
+  'roomSettings.title': '{name} szoba beállításai',
+  'roomSettings.notAssigned': 'Nincs kiválasztva',
+  'roomSettings.temperatureLabel': 'Hőmérséklet-érzékelő',
+  'roomSettings.humidityLabel': 'Páratartalom-érzékelő',
+  'roomSettings.loadingSensors': 'Érzékelők betöltése…',
+  'roomSettings.loadError': 'Nem sikerült betölteni a Home Assistant érzékelőket. Elérhető a Home Assistant?',
+  'roomSettings.saveError': 'Nem sikerült frissíteni a szoba érzékelőit. Próbáld újra.',
+  'roomSettings.readingSummary': 'most {temp}°C / {humidity}%, 24 órás átlag {vpd} kPa → gyakoriság ×{factor}',
+  'roomSettings.noReadingYet': 'Még nincs érzékelő-adat — ez akár 30 percet is igénybe vehet az érzékelő hozzárendelése után.',
 };
 
 const dictionaries: Record<Locale, Dict> = { en, hu };

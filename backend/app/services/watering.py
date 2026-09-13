@@ -8,7 +8,15 @@ from app.models.orm import Plant, WateringEvent
 from app.services.schedule import compute_effective_interval, compute_next_due_at, resolve_base_interval
 
 
-def water_plant(session: Session, plant: Plant, *, now: dt.datetime, source: str, hemisphere: str) -> WateringEvent:
+def water_plant(
+    session: Session,
+    plant: Plant,
+    *,
+    now: dt.datetime,
+    source: str,
+    hemisphere: str,
+    climate_factor: float = 1.0,
+) -> WateringEvent:
     """Records a watering event and recomputes the plant's next due date.
 
     Caller is responsible for committing/flushing the session.
@@ -23,6 +31,7 @@ def water_plant(session: Session, plant: Plant, *, now: dt.datetime, source: str
         profile=plant.species.seasonal_profile,
         hemisphere=hemisphere,
         seasonal_adjust_enabled=plant.seasonal_adjust_enabled,
+        climate_factor=climate_factor,
     )
 
     plant.last_watered_at = now

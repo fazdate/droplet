@@ -51,6 +51,21 @@ def _apply_schema_patches(engine: Engine) -> None:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE plant ADD COLUMN nickname_is_custom BOOLEAN NOT NULL DEFAULT 0"))
 
+    if "room" in inspector.get_table_names():
+        existing_room_columns = {col["name"] for col in inspector.get_columns("room")}
+        room_column_ddl = {
+            "temperature_entity_id": "VARCHAR",
+            "humidity_entity_id": "VARCHAR",
+            "climate_vpd_kpa": "FLOAT",
+            "climate_temp_c": "FLOAT",
+            "climate_humidity": "FLOAT",
+            "climate_updated_at": "DATETIME",
+        }
+        for column_name, ddl_type in room_column_ddl.items():
+            if column_name not in existing_room_columns:
+                with engine.begin() as conn:
+                    conn.execute(text(f"ALTER TABLE room ADD COLUMN {column_name} {ddl_type}"))
+
     if "species" in inspector.get_table_names():
         existing_species_columns = {col["name"] for col in inspector.get_columns("species")}
         if "care_language" not in existing_species_columns:

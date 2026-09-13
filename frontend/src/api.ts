@@ -9,6 +9,30 @@ export interface RoomSummary {
   plant_count: number;
   due_count: number;
   overdue_count: number;
+  temperature_entity_id: string | null;
+  humidity_entity_id: string | null;
+  climate_temp_c: number | null;
+  climate_humidity: number | null;
+  climate_vpd_kpa: number | null;
+  climate_updated_at: string | null;
+}
+
+export interface SensorInfo {
+  entity_id: string;
+  friendly_name: string;
+  device_class: 'temperature' | 'humidity';
+  unit: string | null;
+  state: string;
+}
+
+export interface HaSensors {
+  temperature: SensorInfo[];
+  humidity: SensorInfo[];
+}
+
+export interface RoomClimateEntitiesUpdate {
+  temperature_entity_id: string | null;
+  humidity_entity_id: string | null;
 }
 
 export interface PlantOut {
@@ -107,6 +131,18 @@ export function deleteRoom(roomId: number): Promise<void> {
   return fetch(`/api/rooms/${roomId}`, { method: 'DELETE' }).then((r) => {
     if (!r.ok) throw new Error(`Request failed: ${r.status}`);
   });
+}
+
+export function fetchHaSensors(): Promise<HaSensors> {
+  return fetch('/api/ha/sensors').then((r) => json<HaSensors>(r));
+}
+
+export function updateRoomClimateEntities(roomId: number, payload: RoomClimateEntitiesUpdate): Promise<RoomSummary> {
+  return fetch(`/api/rooms/${roomId}/climate-entities`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).then((r) => json<RoomSummary>(r));
 }
 
 export function fetchPlants(): Promise<PlantOut[]> {

@@ -6,6 +6,7 @@ import {
   deletePlant,
   deleteRoom,
   diagnosePlant,
+  fetchHaSensors,
   fetchPlants,
   fetchRooms,
   identifyPhoto,
@@ -18,9 +19,12 @@ import {
   updatePlantNickname,
   updatePlantPhoto,
   updatePlantRoom,
+  updateRoomClimateEntities,
   waterPlant,
   waterRoom,
+  type HaSensors,
   type PlantOut,
+  type RoomClimateEntitiesUpdate,
   type RoomSummary,
 } from './api';
 import { AddPlantFlow } from './addPlantFlow';
@@ -33,6 +37,7 @@ import {
 } from './addPlantUi';
 import { renderDiagnoseModal, renderDiagnosePlantPickerModal, createDiagnoseCaptureInput, type DiagnoseStep } from './diagnosePlantUi';
 import { renderMoveRoomModal } from './moveRoomUi';
+import { renderRoomSettingsModal, type SensorsStep } from './roomSettingsUi';
 import { capitalizeName } from './format';
 import { renderApp, type PlantPhotoPreview } from './render';
 import { showToast, showUndoToast } from './toast';
@@ -49,6 +54,7 @@ const addChoiceModalRoot = document.querySelector<HTMLDivElement>('#add-choice-m
 const addModalRoot = document.querySelector<HTMLDivElement>('#add-modal-root')!;
 const nicknameModalRoot = document.querySelector<HTMLDivElement>('#nickname-modal-root')!;
 const roomRenameModalRoot = document.querySelector<HTMLDivElement>('#room-rename-modal-root')!;
+const roomSettingsModalRoot = document.querySelector<HTMLDivElement>('#room-settings-modal-root')!;
 const moveRoomModalRoot = document.querySelector<HTMLDivElement>('#move-room-modal-root')!;
 const diagnosePickerModalRoot = document.querySelector<HTMLDivElement>('#diagnose-picker-modal-root')!;
 const diagnoseModalRoot = document.querySelector<HTMLDivElement>('#diagnose-modal-root')!;
@@ -60,6 +66,8 @@ let expandedRoomId: number | null = null;
 let moveRoomPlantId: number | null = null;
 let editingNicknamePlantId: number | null = null;
 let editingRoomId: number | null = null;
+let roomSettingsRoomId: number | null = null;
+let roomSettingsSensorsStep: SensorsStep = { name: 'loading' };
 let diagnosePlantId: number | null = null;
 let diagnoseStep: DiagnoseStep = { name: 'idle' };
 let diagnosePickerOpen = false;
@@ -85,6 +93,7 @@ function renderCurrentView(): void {
     expandedRoomId,
     onToggleRoomDetail: handleToggleRoomDetail,
     onRenameRoom: handleRenameRoom,
+    onOpenRoomSettings: handleOpenRoomSettings,
     photoPreview,
     onOpenPhotoPreview: handleOpenPhotoPreview,
     onClosePhotoPreview: handleClosePhotoPreview,
@@ -105,6 +114,7 @@ async function refresh(): Promise<void> {
   updateMoveRoomModal();
   updateNicknameModal();
   updateRoomRenameModal();
+  updateRoomSettingsModal();
   updateDiagnosePickerModal();
   updateDiagnoseModal();
 }
@@ -195,6 +205,64 @@ function handleOpenRoomRenameModal(roomId: number): void {
 function handleCloseRoomRenameModal(): void {
   editingRoomId = null;
   updateRoomRenameModal();
+}
+
+/**
+ * "Room settings" (CLIMATE_CADENCE_PLAN.md) — assigns this room's HA
+ * temperature/humidity sensors. The sensor dropdown list is fetched once per
+ * modal-open (not on every refresh()) since it rarely changes and re-fetching
+ * on every water/undo action would be wasteful; refresh() still re-renders
+ * the modal so the room's latest reading/24h-average summary stays live.
+ */
+function updateRoomSettingsModal(): void {
+  const room = roomSettingsRoomId === null ? null : (currentRooms.find((r) => r.id === roomSettingsRoomId) ?? null);
+  renderRoomSettingsModal(roomSettingsModalRoot, {
+    room,
+    sensorsStep: roomSettingsSensorsStep,
+    onSubmit: (payload) => {
+      if (roomSettingsRoomId !== null) void handleSaveRoomClimateEntities(roomSettingsRoomId, payload);
+    },
+    onCancel: handleCloseRoomSettings,
+  });
+}
+
+function handleOpenRoomSettings(roomId: number): void {
+  roomSettingsRoomId = roomId;
+  roomSettingsSensorsStep = { name: 'loading' };
+  updateRoomSettingsModal();
+
+  fetchHaSensors()
+    .then((sensors: HaSensors) => {
+      if (roomSettingsRoomId !== roomId) return; // modal closed/reopened for a different room meanwhile
+      roomSettingsSensorsStep = { name: 'loaded', sensors };
+      updateRoomSettingsModal();
+    })
+    .catch((err) => {
+      console.error('Failed to load HA sensors', err);
+      if (roomSettingsRoomId !== roomId) return;
+      roomSettingsSensorsStep = { name: 'error', message: t('roomSettings.loadError') };
+      updateRoomSettingsModal();
+    });
+}
+
+function handleCloseRoomSettings(): void {
+  roomSettingsRoomId = null;
+  updateRoomSettingsModal();
+}
+
+async function handleSaveRoomClimateEntities(roomId: number, payload: RoomClimateEntitiesUpdate): Promise<void> {
+  try {
+    await updateRoomClimateEntities(roomId, payload);
+  } catch (err) {
+    console.error('Failed to update room climate entities', err);
+    window.alert(t('roomSettings.saveError'));
+    return;
+  }
+
+  roomSettingsRoomId = null;
+  updateRoomSettingsModal();
+  await refresh();
+  showToast(toastRoot, t('toast.roomSettingsSaved'));
 }
 
 function updateDiagnoseModal(): void {

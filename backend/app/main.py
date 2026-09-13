@@ -13,10 +13,12 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.clients.ai import AiVisionClient
+from app.clients.ha import HomeAssistantClient
 from app.clients.perenual import PerenualClient
 from app.config import Settings
 from app.db import create_db_engine, init_db
 from app.deps import get_db
+from app.routers.climate import router as climate_router
 from app.routers.notifications import router as notifications_router
 from app.routers.photos import router as photos_router
 from app.routers.plants import router as plants_router
@@ -95,6 +97,10 @@ def create_app(
     app.state.perenual_client = perenual_client or PerenualClient(
         api_key=settings.perenual_api_key, http_client=app.state.http_client
     )
+    # Also used by app.scheduler's climate_poll job; exposed here too so the
+    # /api/ha/sensors discovery endpoint (CLIMATE_CADENCE_PLAN.md) shares the
+    # same client instead of constructing its own.
+    app.state.ha_client = HomeAssistantClient(base_url=settings.ha_base_url, token=settings.ha_long_lived_token)
 
     # API routes are registered first so they take priority over the catch-all
     # static mount below (Starlette matches routes in registration order).
@@ -103,6 +109,7 @@ def create_app(
     app.include_router(plants_router)
     app.include_router(notifications_router)
     app.include_router(species_router)
+    app.include_router(climate_router)
     # Must be registered before the "/photos" StaticFiles mount below so
     # /photos/thumbnails/* hits the lazy-thumbnail route instead of falling
     # through to a (likely 404) static file lookup — see app.routers.photos.
